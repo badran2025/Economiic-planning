@@ -18,7 +18,7 @@ function Fields({ d }: { d?: Dest }) {
       <input className="field" name="name" placeholder="اسم الوجهة" defaultValue={d?.name ?? ""} required />
       <input
         className="field"
-        type="number"
+        type="text" inputMode="decimal"
         step="any"
         min="0"
         max="100"
@@ -28,7 +28,7 @@ function Fields({ d }: { d?: Dest }) {
       />
       <input
         className="field"
-        type="number"
+        type="text" inputMode="decimal"
         step="any"
         min="0"
         name="targetAmount"

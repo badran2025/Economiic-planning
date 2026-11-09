@@ -29,7 +29,7 @@ function Fields({ p, people, categories }: { p?: Planned; people: Opt[]; categor
           <option key={o.id} value={o.id}>{o.name}</option>
         ))}
       </select>
-      <input className="field" type="number" step="any" min="0" name="amountEgp" placeholder="المبلغ بالجنيه" defaultValue={p ? String(p.amountEgp) : ""} required />
+      <input className="field" type="text" inputMode="decimal" step="any" min="0" name="amountEgp" placeholder="المبلغ بالجنيه" defaultValue={p ? String(p.amountEgp) : ""} required />
     </>
   );
 }

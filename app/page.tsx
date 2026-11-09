@@ -90,7 +90,7 @@ export default async function HomePage() {
           <form action={addYear}>
             <Flex gap="2">
               <TextField.Root
-                type="number"
+                type="text" inputMode="decimal"
                 name="year"
                 defaultValue={nextYear}
                 min={2000}

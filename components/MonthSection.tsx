@@ -71,7 +71,7 @@ function CurrencyInputs({
         <span className="muted" style={{ fontSize: "0.72rem" }}>المبلغ الأصلي</span>
         <input
           className="field"
-          type="number"
+          type="text" inputMode="decimal"
           name="originalAmount"
           step="any"
           min="0"
@@ -105,7 +105,7 @@ function CurrencyInputs({
         <span className="muted" style={{ fontSize: "0.72rem" }}>سعر التحويل للجنيه</span>
         <input
           className="field"
-          type="number"
+          type="text" inputMode="decimal"
           name="rate"
           step="any"
           min="0"
@@ -265,7 +265,7 @@ export default function MonthSection(props: Props) {
           <input type="hidden" name="month" value={month} />
           <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
             <span className="muted" style={{ fontSize: "0.72rem" }}>التاريخ</span>
-            <input className="field" type="date" name="occurredOn" defaultValue={todayISO()} />
+            <input className="field" type="text" inputMode="numeric" placeholder="YYYY-MM-DD" name="occurredOn" defaultValue={todayISO()} />
           </label>
           <ClassifierInputs type={type} people={people} categories={categories} destinations={destinations} />
           <CurrencyInputs />
@@ -328,7 +328,7 @@ export default function MonthSection(props: Props) {
                           <input type="hidden" name="month" value={month} />
                           <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
                             <span className="muted" style={{ fontSize: "0.72rem" }}>التاريخ</span>
-                            <input className="field" type="date" name="occurredOn" defaultValue={e.occurredOn ?? ""} />
+                            <input className="field" type="text" inputMode="numeric" placeholder="YYYY-MM-DD" name="occurredOn" defaultValue={e.occurredOn ?? ""} />
                           </label>
                           <ClassifierInputs
                             type={type}

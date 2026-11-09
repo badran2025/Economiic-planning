@@ -24,10 +24,10 @@ function Fields({ s }: { s?: Source }) {
           <option key={c.code} value={c.code}>{c.label}</option>
         ))}
       </select>
-      <input className="field" type="number" step="any" min="0" name="defaultAmount" placeholder="المبلغ" defaultValue={s ? String(s.defaultAmount) : ""} required />
+      <input className="field" type="text" inputMode="decimal" step="any" min="0" name="defaultAmount" placeholder="المبلغ" defaultValue={s ? String(s.defaultAmount) : ""} required />
       <input
         className="field"
-        type="number"
+        type="text" inputMode="decimal"
         step="any"
         min="0"
         name="defaultRate"

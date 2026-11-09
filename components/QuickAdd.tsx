@@ -334,7 +334,7 @@ export default function QuickAdd({
                       </Box>
                       <Box style={{ flex: "1 1 90px" }}>
                         <TextField.Root
-                          type="number"
+                          type="text" inputMode="decimal"
                           lang="en"
                           step="any"
                           value={r.original}
@@ -347,7 +347,7 @@ export default function QuickAdd({
                       {r.currency !== "EGP" && (
                         <Box style={{ flex: "1 1 70px" }}>
                           <TextField.Root
-                            type="number"
+                            type="text" inputMode="decimal"
                             lang="en"
                             step="any"
                             placeholder="سعر"
@@ -405,7 +405,7 @@ export default function QuickAdd({
               <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="3">
                 <Box>
                   <FieldLabel>التاريخ</FieldLabel>
-                  <TextField.Root type="date" lang="en" value={date} onChange={(e) => setDate(e.target.value)} />
+                  <TextField.Root type="text" inputMode="numeric" placeholder="YYYY-MM-DD" lang="en" value={date} onChange={(e) => setDate(e.target.value)} />
                 </Box>
 
                 {type === "expense" && (
@@ -460,7 +460,7 @@ export default function QuickAdd({
                 <Box>
                   <FieldLabel>المبلغ الأصلي</FieldLabel>
                   <TextField.Root
-                    type="number"
+                    type="text" inputMode="decimal"
                     lang="en"
                     step="any"
                     min="0"
@@ -486,7 +486,7 @@ export default function QuickAdd({
                   <Box>
                     <FieldLabel>سعر التحويل للجنيه</FieldLabel>
                     <TextField.Root
-                      type="number"
+                      type="text" inputMode="decimal"
                       lang="en"
                       step="any"
                       min="0"

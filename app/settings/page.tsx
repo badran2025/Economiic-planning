@@ -76,11 +76,11 @@ export default async function SettingsPage() {
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
             <span className="muted" style={{ fontSize: "0.78rem" }}>سعر الريال السعودي (افتراضي)</span>
-            <input className="field" type="number" step="any" name="rateSar" defaultValue={String(settings.rateSar)} />
+            <input className="field" type="text" inputMode="decimal" step="any" name="rateSar" defaultValue={String(settings.rateSar)} />
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
             <span className="muted" style={{ fontSize: "0.78rem" }}>سعر الدولار (افتراضي)</span>
-            <input className="field" type="number" step="any" name="rateUsd" defaultValue={String(settings.rateUsd)} />
+            <input className="field" type="text" inputMode="decimal" step="any" name="rateUsd" defaultValue={String(settings.rateUsd)} />
           </label>
           <button className="btn btn-primary" type="submit">حفظ</button>
         </form>
