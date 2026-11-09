@@ -232,6 +232,12 @@ export default function QuickAdd({
             </Box>
           )}
 
+          <Text size="1" color="gray">
+            {type === "investment"
+              ? "املأ الحقول لإضافة بند استثمار جديد."
+              : `استخدم زر «${type === "income" ? "توليد الدخل الثابت" : "توليد المصروف الثابت"}» لاختيار بنود محفوظة من الإعدادات، أو املأ الحقول تحت لإضافة بند جديد يدوي.`}
+          </Text>
+
           <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="3">
             <Box>
               <FieldLabel>التاريخ</FieldLabel>
@@ -283,8 +289,8 @@ export default function QuickAdd({
             )}
 
             <Box>
-              <FieldLabel>{type === "income" ? "البند / المصدر" : "البند"}</FieldLabel>
-              <TextField.Root type="text" name="label" />
+              <FieldLabel>{type === "income" ? "اسم الدخل / المصدر" : "الوصف / البيان"}</FieldLabel>
+              <TextField.Root type="text" name="label" placeholder={type === "income" ? "مثلاً: مكافأة" : "وصف مختصر (اختياري)"} />
             </Box>
 
             <Box>
@@ -318,10 +324,6 @@ export default function QuickAdd({
               </Flex>
             </Box>
 
-            <Box>
-              <FieldLabel>ملاحظات</FieldLabel>
-              <TextField.Root type="text" name="note" />
-            </Box>
           </Grid>
 
           <Flex justify="end">

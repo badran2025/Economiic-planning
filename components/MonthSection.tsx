@@ -187,9 +187,15 @@ function ClassifierInputs({
       )}
       <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
         <span className="muted" style={{ fontSize: "0.72rem" }}>
-          {type === "income" ? "البند / المصدر" : "البند"}
+          {type === "income" ? "اسم الدخل / المصدر" : "الوصف / البيان"}
         </span>
-        <input className="field" type="text" name="label" defaultValue={entry?.label ?? ""} />
+        <input
+          className="field"
+          type="text"
+          name="label"
+          defaultValue={entry?.label ?? ""}
+          placeholder={type === "income" ? "مثلاً: مكافأة" : "وصف مختصر (اختياري)"}
+        />
       </label>
     </>
   );
@@ -308,16 +314,19 @@ export default function MonthSection(props: Props) {
         >
           <input type="hidden" name="year" value={year} />
           <input type="hidden" name="month" value={month} />
+          <p className="muted" style={{ gridColumn: "1 / -1", margin: 0, fontSize: "0.72rem" }}>
+            {type === "income"
+              ? "إضافة بند دخل جديد يدوي. للبنود الثابتة المحفوظة استخدم زر «توليد الدخل الثابت»."
+              : type === "expense"
+              ? "إضافة بند مصروف جديد يدوي. للبنود الثابتة المحفوظة استخدم زر «توليد المصروف الثابت»."
+              : "إضافة بند استثمار جديد."}
+          </p>
           <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
             <span className="muted" style={{ fontSize: "0.72rem" }}>التاريخ</span>
             <DatePicker name="occurredOn" defaultValue={todayISO()} />
           </label>
           <ClassifierInputs type={type} people={people} categories={categories} destinations={destinations} />
           <CurrencyInputs />
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-            <span className="muted" style={{ fontSize: "0.72rem" }}>ملاحظات</span>
-            <input className="field" type="text" name="note" />
-          </label>
           <div style={{ display: "flex", alignItems: "flex-end" }}>
             <button className="btn btn-primary" type="submit" style={{ width: "100%" }}>
               حفظ
@@ -339,18 +348,17 @@ export default function MonthSection(props: Props) {
                 {type === "expense" && <th>النوع</th>}
                 {type === "expense" && <th>الشخص</th>}
                 {type === "investment" && <th>الوجهة</th>}
-                <th>البند</th>
+                <th>الوصف</th>
                 <th>الأصلي</th>
                 <th>العملة</th>
                 <th>السعر</th>
                 <th>EGP</th>
-                <th>ملاحظات</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {entries.map((e) => {
-                const colCount = 7 + classifierCols + 1 + 1;
+                const colCount = 7 + classifierCols;
                 if (editingId === e.id) {
                   return (
                     <tr key={e.id}>
@@ -388,10 +396,6 @@ export default function MonthSection(props: Props) {
                             defaultOriginal={e.originalAmount}
                             defaultRate={e.rate}
                           />
-                          <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-                            <span className="muted" style={{ fontSize: "0.72rem" }}>ملاحظات</span>
-                            <input className="field" type="text" name="note" defaultValue={e.note ?? ""} />
-                          </label>
                           <div style={{ display: "flex", alignItems: "flex-end", gap: "0.5rem" }}>
                             <button className="btn btn-primary" type="submit">حفظ</button>
                             <button className="btn" type="button" onClick={() => setEditingId(null)}>
@@ -414,7 +418,6 @@ export default function MonthSection(props: Props) {
                     <td><span className="chip">{currencySymbol(e.currency)}</span></td>
                     <td className="muted">{e.currency === "EGP" ? "—" : fmtNumber(e.rate, 4)}</td>
                     <td style={{ fontWeight: 700, color }}>{fmtEgp(e.amountEgp)}</td>
-                    <td className="muted" style={{ whiteSpace: "normal", maxWidth: 180 }}>{e.note || ""}</td>
                     <td>
                       <div style={{ display: "flex", gap: "0.1rem" }}>
                         <button className="btn btn-ghost" type="button" onClick={() => setEditingId(e.id)} title="تعديل">
