@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cairo } from "next/font/google";
 import "@radix-ui/themes/styles.css";
+import "react-day-picker/style.css";
 import "./globals.css";
 import AppTheme from "@/components/AppTheme";
 

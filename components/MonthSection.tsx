@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import DatePicker from "@/components/DatePicker";
 import { CURRENCIES, currencySymbol } from "@/lib/constants";
 import { computeEgp, fmtEgp, fmtNumber, toNum } from "@/lib/format";
 
@@ -265,7 +266,7 @@ export default function MonthSection(props: Props) {
           <input type="hidden" name="month" value={month} />
           <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
             <span className="muted" style={{ fontSize: "0.72rem" }}>التاريخ</span>
-            <input className="field" type="text" inputMode="numeric" placeholder="YYYY-MM-DD" name="occurredOn" defaultValue={todayISO()} />
+            <DatePicker name="occurredOn" defaultValue={todayISO()} />
           </label>
           <ClassifierInputs type={type} people={people} categories={categories} destinations={destinations} />
           <CurrencyInputs />
@@ -328,7 +329,7 @@ export default function MonthSection(props: Props) {
                           <input type="hidden" name="month" value={month} />
                           <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
                             <span className="muted" style={{ fontSize: "0.72rem" }}>التاريخ</span>
-                            <input className="field" type="text" inputMode="numeric" placeholder="YYYY-MM-DD" name="occurredOn" defaultValue={e.occurredOn ?? ""} />
+                            <DatePicker name="occurredOn" defaultValue={e.occurredOn ?? todayISO()} />
                           </label>
                           <ClassifierInputs
                             type={type}

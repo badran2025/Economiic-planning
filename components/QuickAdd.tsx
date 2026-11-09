@@ -15,6 +15,7 @@ import {
   TextField,
 } from "@radix-ui/themes";
 import { X } from "lucide-react";
+import DatePicker from "@/components/DatePicker";
 import { computeEgp, fmtEgp, toNum } from "@/lib/format";
 import { CURRENCIES } from "@/lib/constants";
 
@@ -405,7 +406,7 @@ export default function QuickAdd({
               <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="3">
                 <Box>
                   <FieldLabel>التاريخ</FieldLabel>
-                  <TextField.Root type="text" inputMode="numeric" placeholder="YYYY-MM-DD" lang="en" value={date} onChange={(e) => setDate(e.target.value)} />
+                  <DatePicker value={date} onChange={setDate} />
                 </Box>
 
                 {type === "expense" && (

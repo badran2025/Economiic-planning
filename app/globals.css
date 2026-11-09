@@ -192,3 +192,20 @@ table.data tr:last-child td {
 table.data td {
   font-variant-numeric: tabular-nums;
 }
+
+/* ===== منتقي التقويم (react-day-picker) بأرقام إنجليزية ومتناسق مع Radix ===== */
+.rdp-root {
+  --rdp-accent-color: var(--accent-9);
+  --rdp-accent-background-color: var(--accent-3);
+  --rdp-today-color: var(--accent-11);
+  --rdp-font-family: var(--font-cairo), system-ui, sans-serif;
+  margin: 0;
+}
+.rdp-root .rdp-day_button:hover {
+  background: var(--gray-3);
+}
+.rdp-selected .rdp-day_button {
+  background: var(--accent-9);
+  color: var(--accent-contrast);
+  border: none;
+}
