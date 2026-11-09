@@ -1,18 +1,41 @@
 import Link from "next/link";
-import { getGrandTotals, getYearsWithTotals } from "@/lib/queries";
+import {
+  getCategories,
+  getGrandTotals,
+  getInvestmentDestinations,
+  getPeople,
+  getYearsWithTotals,
+} from "@/lib/queries";
 import { HeroTotals, TotalsStrip } from "@/components/Totals";
 import { SetupNotice } from "@/components/SetupNotice";
-import { addYear, loadDefaults } from "./actions";
+import QuickAdd from "@/components/QuickAdd";
+import {
+  addExpenseEntry,
+  addIncomeEntry,
+  addInvestmentEntry,
+  addYear,
+  loadDefaults,
+} from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  let totals, years;
+  let totals, years, people, categories, destinations;
   try {
-    [totals, years] = await Promise.all([getGrandTotals(), getYearsWithTotals()]);
+    [totals, years, people, categories, destinations] = await Promise.all([
+      getGrandTotals(),
+      getYearsWithTotals(),
+      getPeople(),
+      getCategories(),
+      getInvestmentDestinations(),
+    ]);
   } catch (e) {
     return <SetupNotice detail={e instanceof Error ? e.message : String(e)} />;
   }
+
+  const peopleOpts = people.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name }));
+  const categoryOpts = categories.filter((c) => c.active).map((c) => ({ id: c.id, name: c.name }));
+  const destOpts = destinations.filter((d) => d.active).map((d) => ({ id: d.id, name: d.name }));
 
   const nextYear = new Date().getFullYear();
 
@@ -25,6 +48,15 @@ export default async function HomePage() {
         </p>
         <HeroTotals totals={totals} />
       </section>
+
+      <QuickAdd
+        people={peopleOpts}
+        categories={categoryOpts}
+        destinations={destOpts}
+        addIncome={addIncomeEntry}
+        addExpense={addExpenseEntry}
+        addInvestment={addInvestmentEntry}
+      />
 
       <section>
         <div

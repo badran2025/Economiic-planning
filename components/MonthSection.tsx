@@ -7,6 +7,12 @@ import { computeEgp, fmtEgp, fmtNumber, toNum } from "@/lib/format";
 type Opt = { id: number; name: string };
 type EntryType = "income" | "expense" | "investment";
 
+function todayISO(): string {
+  const d = new Date();
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
 export type AnyEntry = {
   id: number;
   label: string | null;
@@ -255,7 +261,7 @@ export default function MonthSection(props: Props) {
           <input type="hidden" name="month" value={month} />
           <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
             <span className="muted" style={{ fontSize: "0.72rem" }}>التاريخ</span>
-            <input className="field" type="date" name="occurredOn" />
+            <input className="field" type="date" name="occurredOn" defaultValue={todayISO()} />
           </label>
           <ClassifierInputs type={type} people={people} categories={categories} destinations={destinations} />
           <CurrencyInputs />
