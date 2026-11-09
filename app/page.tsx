@@ -111,15 +111,12 @@ export default async function HomePage() {
               <Link
                 key={y.year}
                 href={`/year/${y.year}`}
-                className="card"
+                className="card card-link"
                 style={{
                   padding: "1.1rem 1.2rem",
-                  textDecoration: "none",
-                  color: "var(--text)",
                   display: "flex",
                   flexDirection: "column",
                   gap: "0.8rem",
-                  transition: "transform 0.12s ease, border-color 0.12s ease",
                 }}
               >
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>

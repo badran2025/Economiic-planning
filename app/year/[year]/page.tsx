@@ -48,15 +48,13 @@ export default async function YearPage({
               <Link
                 key={m.month}
                 href={`/year/${year}/month/${m.month}`}
-                className="card"
+                className="card card-link"
                 style={{
                   padding: "1rem 1.1rem",
-                  textDecoration: "none",
-                  color: "var(--text)",
                   display: "flex",
                   flexDirection: "column",
                   gap: "0.7rem",
-                  opacity: empty ? 0.6 : 1,
+                  opacity: empty ? 0.72 : 1,
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
