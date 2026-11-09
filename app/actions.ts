@@ -427,6 +427,81 @@ export async function generateRecurringExpenses(fd: FormData) {
   revalidateMonth(year, month);
 }
 
+// ---------- اعتماد دفعة دخل بعد المراجعة ----------
+export async function commitIncomeBatch(payload: {
+  year: number;
+  month: number;
+  occurredOn: string | null;
+  items: {
+    sourceId: number | null;
+    label: string;
+    currency: string;
+    originalAmount: number;
+    rate: number;
+  }[];
+}) {
+  const { year, month, occurredOn, items } = payload;
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return;
+  await ensureYear(year);
+  const rows = items
+    .filter((it) => toNum(it.originalAmount) !== 0 || it.label)
+    .map((it) => {
+      const original = toNum(it.originalAmount);
+      const currency = it.currency || "EGP";
+      const rate = currency === "EGP" ? 1 : toNum(it.rate) || 1;
+      return {
+        year,
+        month,
+        sourceId: it.sourceId ?? null,
+        label: it.label || "",
+        currency,
+        originalAmount: String(original),
+        rate: String(rate),
+        amountEgp: String(computeEgp(original, rate)),
+        occurredOn: occurredOn || null,
+        isAdhoc: false,
+      };
+    });
+  if (rows.length) await getDb().insert(s.incomeEntries).values(rows);
+  revalidateMonth(year, month);
+}
+
+// ---------- اعتماد دفعة مصروفات بعد المراجعة ----------
+export async function commitExpenseBatch(payload: {
+  year: number;
+  month: number;
+  occurredOn: string | null;
+  items: {
+    label: string;
+    personId: number | null;
+    categoryId: number | null;
+    amountEgp: number;
+  }[];
+}) {
+  const { year, month, occurredOn, items } = payload;
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return;
+  await ensureYear(year);
+  const rows = items
+    .filter((it) => toNum(it.amountEgp) !== 0 || it.label)
+    .map((it) => {
+      const amount = toNum(it.amountEgp);
+      return {
+        year,
+        month,
+        categoryId: it.categoryId ?? null,
+        personId: it.personId ?? null,
+        label: it.label || "",
+        currency: "EGP",
+        originalAmount: String(amount),
+        rate: "1",
+        amountEgp: String(amount),
+        occurredOn: occurredOn || null,
+      };
+    });
+  if (rows.length) await getDb().insert(s.expenseEntries).values(rows);
+  revalidateMonth(year, month);
+}
+
 // ---------- تحميل التصنيفات الافتراضية ----------
 export async function loadDefaults() {
   const db = getDb();

@@ -8,12 +8,13 @@ import {
   Flex,
   Grid,
   Heading,
-  SegmentedControl,
+  IconButton,
   Select,
+  Separator,
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { Wallet, Receipt, TrendingUp } from "lucide-react";
+import { X } from "lucide-react";
 import { computeEgp, fmtEgp, toNum } from "@/lib/format";
 import { CURRENCIES } from "@/lib/constants";
 
@@ -22,23 +23,56 @@ type EntryType = "income" | "expense" | "investment";
 type ServerAction = (fd: FormData) => Promise<void>;
 type RadixColor = "green" | "red" | "blue";
 
+type IncomeSource = {
+  id: number;
+  name: string;
+  currency: string;
+  defaultAmount: string | number;
+  defaultRate: string | number;
+};
+type PlannedExpense = {
+  id: number;
+  label: string;
+  personId: number | null;
+  categoryId: number | null;
+  amountEgp: string | number;
+};
+
+type IncomeBatch = (p: {
+  year: number;
+  month: number;
+  occurredOn: string | null;
+  items: { sourceId: number | null; label: string; currency: string; originalAmount: number; rate: number }[];
+}) => Promise<void>;
+type ExpenseBatch = (p: {
+  year: number;
+  month: number;
+  occurredOn: string | null;
+  items: { label: string; personId: number | null; categoryId: number | null; amountEgp: number }[];
+}) => Promise<void>;
+
 function todayISO(): string {
   const d = new Date();
   const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
   return local.toISOString().slice(0, 10);
 }
 
-const TYPES: {
-  key: EntryType;
-  label: string;
-  color: RadixColor;
-  tint: string;
-  Icon: typeof Wallet;
-}[] = [
-  { key: "income", label: "دخل", color: "green", tint: "var(--green-9)", Icon: Wallet },
-  { key: "expense", label: "مصروف", color: "red", tint: "var(--red-9)", Icon: Receipt },
-  { key: "investment", label: "استثمار", color: "blue", tint: "var(--blue-9)", Icon: TrendingUp },
+const TYPES: { key: EntryType; label: string; color: RadixColor }[] = [
+  { key: "income", label: "دخل", color: "green" },
+  { key: "expense", label: "مصروف", color: "red" },
+  { key: "investment", label: "استثمار", color: "blue" },
 ];
+
+type Row = {
+  key: string;
+  sourceId: number | null;
+  label: string;
+  currency: string;
+  original: string;
+  rate: string;
+  personId: number | null;
+  categoryId: number | null;
+};
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -48,42 +82,28 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function TypeIcon({ tint, Icon }: { tint: string; Icon: typeof Wallet }) {
-  return (
-    <Flex
-      align="center"
-      justify="center"
-      style={{
-        width: 22,
-        height: 22,
-        borderRadius: 7,
-        background: `color-mix(in srgb, ${tint} 16%, transparent)`,
-        color: tint,
-      }}
-    >
-      <Icon size={14} strokeWidth={2.2} />
-    </Flex>
-  );
-}
-
 export default function QuickAdd({
   people,
   categories,
   destinations,
+  incomeSources,
+  plannedExpenses,
   addIncome,
   addExpense,
   addInvestment,
-  generateIncome,
-  generateExpense,
+  commitIncome,
+  commitExpense,
 }: {
   people: Opt[];
   categories: Opt[];
   destinations: Opt[];
+  incomeSources: IncomeSource[];
+  plannedExpenses: PlannedExpense[];
   addIncome: ServerAction;
   addExpense: ServerAction;
   addInvestment: ServerAction;
-  generateIncome: ServerAction;
-  generateExpense: ServerAction;
+  commitIncome: IncomeBatch;
+  commitExpense: ExpenseBatch;
 }) {
   const [type, setType] = useState<EntryType>("expense");
   const [date, setDate] = useState(todayISO());
@@ -95,6 +115,8 @@ export default function QuickAdd({
   const [destination, setDestination] = useState("none");
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const [preview, setPreview] = useState<"income" | "expense" | null>(null);
+  const [rows, setRows] = useState<Row[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
 
   const isEgp = currency === "EGP";
@@ -103,14 +125,18 @@ export default function QuickAdd({
 
   function ym(d: string) {
     const base = d || todayISO();
-    return { year: base.slice(0, 4), month: String(parseInt(base.slice(5, 7), 10)), base };
+    return { year: parseInt(base.slice(0, 4), 10), month: parseInt(base.slice(5, 7), 10), base };
+  }
+  function flash(msg: string) {
+    setDone(msg);
+    setTimeout(() => setDone(null), 2600);
   }
 
   async function onSubmit(fd: FormData) {
     const { year, month, base } = ym(date);
     fd.set("occurredOn", base);
-    fd.set("year", year);
-    fd.set("month", month);
+    fd.set("year", String(year));
+    fd.set("month", String(month));
     fd.set("currency", currency);
     fd.set("originalAmount", original);
     fd.set("rate", rate);
@@ -118,9 +144,7 @@ export default function QuickAdd({
       fd.set("categoryId", category === "none" ? "" : category);
       fd.set("personId", person === "none" ? "" : person);
     }
-    if (type === "investment") {
-      fd.set("destinationId", destination === "none" ? "" : destination);
-    }
+    if (type === "investment") fd.set("destinationId", destination === "none" ? "" : destination);
     setSaving(true);
     try {
       if (type === "income") await addIncome(fd);
@@ -140,192 +164,368 @@ export default function QuickAdd({
     }
   }
 
-  async function onGenerate() {
-    const { year, month } = ym(date);
-    const fd = new FormData();
-    fd.set("year", year);
-    fd.set("month", month);
+  function startGenerate() {
+    if (type === "income") {
+      setRows(
+        incomeSources.map((s) => ({
+          key: "i" + s.id,
+          sourceId: s.id,
+          label: s.name,
+          currency: s.currency,
+          original: String(toNum(s.defaultAmount)),
+          rate: String(toNum(s.defaultRate) || 1),
+          personId: null,
+          categoryId: null,
+        }))
+      );
+      setPreview("income");
+    } else {
+      setRows(
+        plannedExpenses.map((p) => ({
+          key: "e" + p.id,
+          sourceId: null,
+          label: p.label,
+          currency: "EGP",
+          original: String(toNum(p.amountEgp)),
+          rate: "1",
+          personId: p.personId,
+          categoryId: p.categoryId,
+        }))
+      );
+      setPreview("expense");
+    }
+  }
+
+  function updateRow(key: string, patch: Partial<Row>) {
+    setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  }
+  function removeRow(key: string) {
+    setRows((rs) => rs.filter((r) => r.key !== key));
+  }
+
+  async function onConfirm() {
+    const { year, month, base } = ym(date);
     setSaving(true);
     try {
-      if (type === "income") {
-        await generateIncome(fd);
-        flash("تم توليد الدخل الثابت ✓");
+      if (preview === "income") {
+        await commitIncome({
+          year,
+          month,
+          occurredOn: base,
+          items: rows.map((r) => ({
+            sourceId: r.sourceId,
+            label: r.label,
+            currency: r.currency,
+            originalAmount: toNum(r.original),
+            rate: toNum(r.rate) || 1,
+          })),
+        });
+        flash("تم إضافة الدخل الثابت ✓");
       } else {
-        await generateExpense(fd);
-        flash("تم توليد المصروف الثابت ✓");
+        await commitExpense({
+          year,
+          month,
+          occurredOn: base,
+          items: rows.map((r) => ({
+            label: r.label,
+            personId: r.personId,
+            categoryId: r.categoryId,
+            amountEgp: toNum(r.original),
+          })),
+        });
+        flash("تم إضافة المصروف الثابت ✓");
       }
+      setPreview(null);
+      setRows([]);
     } finally {
       setSaving(false);
     }
   }
 
-  function flash(msg: string) {
-    setDone(msg);
-    setTimeout(() => setDone(null), 2600);
-  }
+  const previewTotal = rows.reduce(
+    (a, r) => a + computeEgp(toNum(r.original), r.currency === "EGP" ? 1 : toNum(r.rate) || 0),
+    0
+  );
 
   return (
     <Card size="3">
-      <form ref={formRef} action={onSubmit} lang="en">
-        <Flex direction="column" gap="4">
-          <Flex align="center" justify="between" wrap="wrap" gap="2">
-            <Heading size="4" lang="ar">إضافة سريعة</Heading>
-            {done && (
-              <Text size="2" weight="bold" color="green" lang="ar">
-                {done}
-              </Text>
-            )}
-          </Flex>
-
-          <SegmentedControl.Root
-            value={type}
-            onValueChange={(v) => setType(v as EntryType)}
-            size="3"
-          >
-            {TYPES.map((t) => (
-              <SegmentedControl.Item key={t.key} value={t.key}>
-                <Flex align="center" gap="2" lang="ar">
-                  <TypeIcon tint={t.tint} Icon={t.Icon} />
-                  {t.label}
-                </Flex>
-              </SegmentedControl.Item>
-            ))}
-          </SegmentedControl.Root>
-
-          {type !== "investment" && (
-            <Box>
-              <Button type="button" variant="soft" color={meta.color} onClick={onGenerate} disabled={saving}>
-                ⟳ <span lang="ar">{type === "income" ? "توليد الدخل الثابت" : "توليد المصروف الثابت"}</span>
-              </Button>
-            </Box>
+      <Flex direction="column" gap="4">
+        <Flex align="center" justify="between" wrap="wrap" gap="2">
+          <Heading size="4">إضافة سريعة</Heading>
+          {done && (
+            <Text size="2" weight="bold" color="green">
+              {done}
+            </Text>
           )}
-
-          <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="3">
-            <Box>
-              <FieldLabel>التاريخ</FieldLabel>
-              <TextField.Root
-                type="date"
-                lang="en"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
-            </Box>
-
-            {type === "expense" && (
-              <>
-                <Box>
-                  <FieldLabel>النوع</FieldLabel>
-                  <Select.Root value={category} onValueChange={setCategory}>
-                    <Select.Trigger style={{ width: "100%" }} />
-                    <Select.Content>
-                      <Select.Item value="none">— بدون —</Select.Item>
-                      {categories.map((o) => (
-                        <Select.Item key={o.id} value={String(o.id)}>{o.name}</Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select.Root>
-                </Box>
-                <Box>
-                  <FieldLabel>الشخص</FieldLabel>
-                  <Select.Root value={person} onValueChange={setPerson}>
-                    <Select.Trigger style={{ width: "100%" }} />
-                    <Select.Content>
-                      <Select.Item value="none">— بدون —</Select.Item>
-                      {people.map((o) => (
-                        <Select.Item key={o.id} value={String(o.id)}>{o.name}</Select.Item>
-                      ))}
-                    </Select.Content>
-                  </Select.Root>
-                </Box>
-              </>
-            )}
-
-            {type === "investment" && (
-              <Box>
-                <FieldLabel>الوجهة</FieldLabel>
-                <Select.Root value={destination} onValueChange={setDestination}>
-                  <Select.Trigger style={{ width: "100%" }} />
-                  <Select.Content>
-                    <Select.Item value="none">— بدون —</Select.Item>
-                    {destinations.map((o) => (
-                      <Select.Item key={o.id} value={String(o.id)}>{o.name}</Select.Item>
-                    ))}
-                  </Select.Content>
-                </Select.Root>
-              </Box>
-            )}
-
-            <Box>
-              <FieldLabel>{type === "income" ? "البند / المصدر" : "البند"}</FieldLabel>
-              <TextField.Root type="text" name="label" />
-            </Box>
-
-            <Box>
-              <FieldLabel>المبلغ الأصلي</FieldLabel>
-              <TextField.Root
-                type="number"
-                lang="en"
-                step="any"
-                min="0"
-                required
-                value={original}
-                onChange={(e) => setOriginal(e.target.value)}
-              />
-            </Box>
-
-            <Box>
-              <FieldLabel>العملة</FieldLabel>
-              <Select.Root value={currency} onValueChange={setCurrency}>
-                <Select.Trigger style={{ width: "100%" }} />
-                <Select.Content>
-                  {CURRENCIES.map((c) => (
-                    <Select.Item key={c.code} value={c.code}>{c.label}</Select.Item>
-                  ))}
-                </Select.Content>
-              </Select.Root>
-            </Box>
-
-            {!isEgp && (
-              <Box>
-                <FieldLabel>سعر التحويل للجنيه</FieldLabel>
-                <TextField.Root
-                  type="number"
-                  lang="en"
-                  step="any"
-                  min="0"
-                  placeholder="13.6"
-                  value={rate}
-                  onChange={(e) => setRate(e.target.value)}
-                />
-              </Box>
-            )}
-
-            <Box>
-              <FieldLabel>المقابل بالجنيه</FieldLabel>
-              <Flex align="center" height="32px">
-                <Text weight="bold" color={meta.color} className="num">
-                  {fmtEgp(egp)} EGP
-                </Text>
-              </Flex>
-            </Box>
-
-            <Box>
-              <FieldLabel>ملاحظات</FieldLabel>
-              <TextField.Root type="text" name="note" />
-            </Box>
-          </Grid>
-
-          <Flex justify="end">
-            <Button type="submit" color={meta.color} disabled={saving} size="3">
-              <span lang="ar">{saving ? "جارٍ الحفظ..." : `+ إضافة ${meta.label}`}</span>
-            </Button>
-          </Flex>
-
-          <Text size="1" color="gray" lang="ar">
-            السنة والشهر بيتحددوا تلقائياً من التاريخ، والرقم بيتجمّع في بطاقة الشهر والسنة والإجمالي.
-          </Text>
         </Flex>
-      </form>
+
+        {/* اختيار النوع — خلفية شفافة ملوّنة لكل كلمة */}
+        <Flex gap="2" wrap="wrap">
+          {TYPES.map((t) => {
+            const active = type === t.key;
+            return (
+              <Button
+                key={t.key}
+                type="button"
+                variant="soft"
+                color={t.color}
+                size="3"
+                onClick={() => {
+                  setType(t.key);
+                  setPreview(null);
+                }}
+                style={{
+                  flex: "1 1 120px",
+                  opacity: active ? 1 : 0.55,
+                  boxShadow: active ? `inset 0 0 0 1px var(--${t.color}-8)` : undefined,
+                  fontWeight: active ? 700 : 500,
+                }}
+              >
+                {t.label}
+              </Button>
+            );
+          })}
+        </Flex>
+
+        {preview ? (
+          /* ===== لوحة المراجعة قبل الاعتماد ===== */
+          <Box>
+            <Flex align="center" justify="between" mb="2" wrap="wrap" gap="2">
+              <Text weight="bold">
+                راجع البنود قبل الإضافة — {preview === "income" ? "الدخل الثابت" : "المصروف الثابت"}
+              </Text>
+              <Text size="2" color="gray">
+                التاريخ: {date} · الإجمالي:{" "}
+                <Text weight="bold" color={preview === "income" ? "green" : "red"} className="num">
+                  {fmtEgp(previewTotal)} EGP
+                </Text>
+              </Text>
+            </Flex>
+
+            {rows.length === 0 ? (
+              <Text color="gray" size="2">
+                {preview === "income"
+                  ? "مفيش مصادر دخل ثابتة محفوظة. ضيفها من الإعدادات."
+                  : "مفيش بنود مصروفات مخطّطة محفوظة. ضيفها من الإعدادات."}
+              </Text>
+            ) : (
+              <Flex direction="column" gap="2">
+                {rows.map((r) => {
+                  const rEgp = computeEgp(toNum(r.original), r.currency === "EGP" ? 1 : toNum(r.rate) || 0);
+                  return (
+                    <Flex
+                      key={r.key}
+                      align="center"
+                      gap="2"
+                      wrap="wrap"
+                      style={{
+                        background: "var(--gray-2)",
+                        border: "1px solid var(--gray-a4)",
+                        borderRadius: "var(--radius-3)",
+                        padding: "8px 10px",
+                      }}
+                    >
+                      <Box style={{ flex: "2 1 150px" }}>
+                        <TextField.Root
+                          value={r.label}
+                          onChange={(e) => updateRow(r.key, { label: e.target.value })}
+                          size="2"
+                        />
+                      </Box>
+                      <Box style={{ flex: "1 1 90px" }}>
+                        <TextField.Root
+                          type="number"
+                          lang="en"
+                          step="any"
+                          value={r.original}
+                          onChange={(e) => updateRow(r.key, { original: e.target.value })}
+                          size="2"
+                        >
+                          <TextField.Slot side="right">{r.currency}</TextField.Slot>
+                        </TextField.Root>
+                      </Box>
+                      {r.currency !== "EGP" && (
+                        <Box style={{ flex: "1 1 70px" }}>
+                          <TextField.Root
+                            type="number"
+                            lang="en"
+                            step="any"
+                            placeholder="سعر"
+                            value={r.rate}
+                            onChange={(e) => updateRow(r.key, { rate: e.target.value })}
+                            size="2"
+                          />
+                        </Box>
+                      )}
+                      <Text size="2" weight="bold" className="num" style={{ minWidth: 90, textAlign: "left" }}>
+                        {fmtEgp(rEgp)} EGP
+                      </Text>
+                      <IconButton
+                        type="button"
+                        variant="ghost"
+                        color="red"
+                        size="1"
+                        onClick={() => removeRow(r.key)}
+                        aria-label="حذف البند"
+                      >
+                        <X size={15} />
+                      </IconButton>
+                    </Flex>
+                  );
+                })}
+              </Flex>
+            )}
+
+            <Flex justify="end" gap="2" mt="3">
+              <Button type="button" variant="soft" color="gray" onClick={() => setPreview(null)}>
+                إلغاء
+              </Button>
+              <Button
+                type="button"
+                color={preview === "income" ? "green" : "red"}
+                disabled={saving || rows.length === 0}
+                onClick={onConfirm}
+              >
+                اعتماد وإضافة ({rows.length})
+              </Button>
+            </Flex>
+          </Box>
+        ) : (
+          /* ===== النموذج العادي ===== */
+          <form ref={formRef} action={onSubmit}>
+            <Flex direction="column" gap="4">
+              {type !== "investment" && (
+                <Box>
+                  <Button type="button" variant="soft" color={meta.color} onClick={startGenerate} disabled={saving}>
+                    ⟳ {type === "income" ? "توليد الدخل الثابت" : "توليد المصروف الثابت"}
+                  </Button>
+                </Box>
+              )}
+
+              <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="3">
+                <Box>
+                  <FieldLabel>التاريخ</FieldLabel>
+                  <TextField.Root type="date" lang="en" value={date} onChange={(e) => setDate(e.target.value)} />
+                </Box>
+
+                {type === "expense" && (
+                  <>
+                    <Box>
+                      <FieldLabel>النوع</FieldLabel>
+                      <Select.Root value={category} onValueChange={setCategory}>
+                        <Select.Trigger style={{ width: "100%" }} />
+                        <Select.Content>
+                          <Select.Item value="none">— بدون —</Select.Item>
+                          {categories.map((o) => (
+                            <Select.Item key={o.id} value={String(o.id)}>{o.name}</Select.Item>
+                          ))}
+                        </Select.Content>
+                      </Select.Root>
+                    </Box>
+                    <Box>
+                      <FieldLabel>الشخص</FieldLabel>
+                      <Select.Root value={person} onValueChange={setPerson}>
+                        <Select.Trigger style={{ width: "100%" }} />
+                        <Select.Content>
+                          <Select.Item value="none">— بدون —</Select.Item>
+                          {people.map((o) => (
+                            <Select.Item key={o.id} value={String(o.id)}>{o.name}</Select.Item>
+                          ))}
+                        </Select.Content>
+                      </Select.Root>
+                    </Box>
+                  </>
+                )}
+
+                {type === "investment" && (
+                  <Box>
+                    <FieldLabel>الوجهة</FieldLabel>
+                    <Select.Root value={destination} onValueChange={setDestination}>
+                      <Select.Trigger style={{ width: "100%" }} />
+                      <Select.Content>
+                        <Select.Item value="none">— بدون —</Select.Item>
+                        {destinations.map((o) => (
+                          <Select.Item key={o.id} value={String(o.id)}>{o.name}</Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Root>
+                  </Box>
+                )}
+
+                <Box>
+                  <FieldLabel>{type === "income" ? "البند / المصدر" : "البند"}</FieldLabel>
+                  <TextField.Root type="text" name="label" />
+                </Box>
+
+                <Box>
+                  <FieldLabel>المبلغ الأصلي</FieldLabel>
+                  <TextField.Root
+                    type="number"
+                    lang="en"
+                    step="any"
+                    min="0"
+                    required
+                    value={original}
+                    onChange={(e) => setOriginal(e.target.value)}
+                  />
+                </Box>
+
+                <Box>
+                  <FieldLabel>العملة</FieldLabel>
+                  <Select.Root value={currency} onValueChange={setCurrency}>
+                    <Select.Trigger style={{ width: "100%" }} />
+                    <Select.Content>
+                      {CURRENCIES.map((c) => (
+                        <Select.Item key={c.code} value={c.code}>{c.label}</Select.Item>
+                      ))}
+                    </Select.Content>
+                  </Select.Root>
+                </Box>
+
+                {!isEgp && (
+                  <Box>
+                    <FieldLabel>سعر التحويل للجنيه</FieldLabel>
+                    <TextField.Root
+                      type="number"
+                      lang="en"
+                      step="any"
+                      min="0"
+                      placeholder="13.6"
+                      value={rate}
+                      onChange={(e) => setRate(e.target.value)}
+                    />
+                  </Box>
+                )}
+
+                <Box>
+                  <FieldLabel>المقابل بالجنيه</FieldLabel>
+                  <Flex align="center" height="32px">
+                    <Text weight="bold" color={meta.color} className="num">
+                      {fmtEgp(egp)} EGP
+                    </Text>
+                  </Flex>
+                </Box>
+
+                <Box>
+                  <FieldLabel>ملاحظات</FieldLabel>
+                  <TextField.Root type="text" name="note" />
+                </Box>
+              </Grid>
+
+              <Flex justify="end">
+                <Button type="submit" color={meta.color} disabled={saving} size="3">
+                  {saving ? "جارٍ الحفظ..." : `+ إضافة ${meta.label}`}
+                </Button>
+              </Flex>
+            </Flex>
+          </form>
+        )}
+
+        <Separator size="4" />
+        <Text size="1" color="gray">
+          السنة والشهر بيتحددوا تلقائياً من التاريخ، والرقم بيتجمّع في بطاقة الشهر والسنة والإجمالي.
+        </Text>
+      </Flex>
     </Card>
   );
 }

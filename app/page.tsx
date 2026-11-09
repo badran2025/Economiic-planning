@@ -3,8 +3,10 @@ import { Box, Button, Card, Flex, Grid, Heading, Text, TextField } from "@radix-
 import {
   getCategories,
   getGrandTotals,
+  getIncomeSources,
   getInvestmentDestinations,
   getPeople,
+  getPlannedExpenses,
   getYearsWithTotals,
 } from "@/lib/queries";
 import { HeroTotals, TotalsStrip } from "@/components/Totals";
@@ -15,22 +17,24 @@ import {
   addIncomeEntry,
   addInvestmentEntry,
   addYear,
-  generateRecurringExpenses,
-  generateRecurringIncome,
+  commitExpenseBatch,
+  commitIncomeBatch,
   loadDefaults,
 } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  let totals, years, people, categories, destinations;
+  let totals, years, people, categories, destinations, sources, planned;
   try {
-    [totals, years, people, categories, destinations] = await Promise.all([
+    [totals, years, people, categories, destinations, sources, planned] = await Promise.all([
       getGrandTotals(),
       getYearsWithTotals(),
       getPeople(),
       getCategories(),
       getInvestmentDestinations(),
+      getIncomeSources(),
+      getPlannedExpenses(),
     ]);
   } catch (e) {
     return <SetupNotice detail={e instanceof Error ? e.message : String(e)} />;
@@ -39,6 +43,22 @@ export default async function HomePage() {
   const peopleOpts = people.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name }));
   const categoryOpts = categories.filter((c) => c.active).map((c) => ({ id: c.id, name: c.name }));
   const destOpts = destinations.filter((d) => d.active).map((d) => ({ id: d.id, name: d.name }));
+  const sourceList = sources
+    .filter((s) => s.active)
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      currency: s.currency,
+      defaultAmount: s.defaultAmount,
+      defaultRate: s.defaultRate,
+    }));
+  const plannedList = planned.map((p) => ({
+    id: p.id,
+    label: p.label,
+    personId: p.personId,
+    categoryId: p.categoryId,
+    amountEgp: p.amountEgp,
+  }));
   const nextYear = new Date().getFullYear();
 
   return (
@@ -55,11 +75,13 @@ export default async function HomePage() {
         people={peopleOpts}
         categories={categoryOpts}
         destinations={destOpts}
+        incomeSources={sourceList}
+        plannedExpenses={plannedList}
         addIncome={addIncomeEntry}
         addExpense={addExpenseEntry}
         addInvestment={addInvestmentEntry}
-        generateIncome={generateRecurringIncome}
-        generateExpense={generateRecurringExpenses}
+        commitIncome={commitIncomeBatch}
+        commitExpense={commitExpenseBatch}
       />
 
       <Box>
