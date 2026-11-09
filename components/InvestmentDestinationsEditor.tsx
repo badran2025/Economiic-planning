@@ -1,6 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { fmtEgp, fmtPercent, toNum } from "@/lib/format";
 
 type Dest = {
@@ -15,22 +20,17 @@ type ServerAction = (fd: FormData) => Promise<void>;
 function Fields({ d }: { d?: Dest }) {
   return (
     <>
-      <input className="field" name="name" placeholder="اسم الوجهة" defaultValue={d?.name ?? ""} required />
-      <input
-        className="field"
-        type="text" inputMode="decimal"
-        step="any"
-        min="0"
-        max="100"
+      <Input name="name" placeholder="اسم الوجهة" defaultValue={d?.name ?? ""} required />
+      <Input
+        type="text"
+        inputMode="decimal"
         name="percentage"
         placeholder="% من الفائض"
         defaultValue={d && d.percentage !== null ? String(Math.round(toNum(d.percentage) * 100 * 100) / 100) : ""}
       />
-      <input
-        className="field"
-        type="text" inputMode="decimal"
-        step="any"
-        min="0"
+      <Input
+        type="text"
+        inputMode="decimal"
         name="targetAmount"
         placeholder="الهدف (اختياري)"
         defaultValue={d && d.targetAmount !== null ? String(d.targetAmount) : ""}
@@ -54,18 +54,20 @@ export default function InvestmentDestinationsEditor({
 }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const addRef = useRef<HTMLFormElement>(null);
-  const gridCols = "repeat(auto-fit, minmax(130px, 1fr))";
+  const grid = "grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_auto_auto]";
   const progMap = new Map(progress.map((p) => [p.id, p]));
 
   return (
-    <section className="card" style={{ padding: "1.1rem 1.2rem" }}>
-      <h3 style={{ margin: "0 0 0.3rem", fontSize: "1.05rem" }}>وجهات الاستثمار / توزيع الفائض</h3>
-      <p className="muted" style={{ margin: "0 0 0.8rem", fontSize: "0.8rem" }}>
-        النسبة من الفائض اختيارية (للمقارنة بالخطة)، والهدف اختياري لمتابعة كام وصلت.
-      </p>
+    <Card className="gap-3 p-5">
+      <div>
+        <h3 className="text-base font-bold">وجهات الاستثمار / توزيع الفائض</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          النسبة من الفائض اختيارية (للمقارنة بالخطة)، والهدف اختياري لمتابعة كام وصلت.
+        </p>
+      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.9rem" }}>
-        {items.length === 0 && <span className="muted" style={{ fontSize: "0.85rem" }}>لا يوجد بعد.</span>}
+      <div className="flex flex-col gap-2">
+        {items.length === 0 && <span className="text-sm text-muted-foreground">لا يوجد بعد.</span>}
         {items.map((d) => {
           const p = progMap.get(d.id);
           const actual = p?.actual ?? 0;
@@ -79,41 +81,43 @@ export default function InvestmentDestinationsEditor({
                   await updateAction(fd);
                   setEditingId(null);
                 }}
-                style={{ display: "grid", gridTemplateColumns: gridCols, gap: "0.4rem", alignItems: "center", background: "var(--surface-2)", padding: "0.6rem", borderRadius: 8 }}
+                className={`${grid} items-center rounded-md bg-muted/50 p-2`}
               >
                 <input type="hidden" name="id" value={d.id} />
                 <Fields d={d} />
-                <div style={{ display: "flex", gap: "0.3rem" }}>
-                  <button className="btn btn-primary" type="submit">حفظ</button>
-                  <button className="btn" type="button" onClick={() => setEditingId(null)}>إلغاء</button>
+                <div className="flex gap-2">
+                  <Button type="submit" size="sm">حفظ</Button>
+                  <Button type="button" size="sm" variant="secondary" onClick={() => setEditingId(null)}>إلغاء</Button>
                 </div>
               </form>
             );
           }
           return (
-            <div key={d.id} style={{ padding: "0.6rem 0.7rem", background: "var(--surface-2)", borderRadius: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}>
-                <div>
-                  <span style={{ fontWeight: 600 }}>{d.name}</span>{" "}
-                  {d.percentage !== null && (
-                    <span className="chip">{fmtPercent(toNum(d.percentage))} من الفائض</span>
-                  )}
+            <div key={d.id} className="rounded-md bg-muted/50 px-3 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">{d.name}</span>
+                  {d.percentage !== null && <Badge variant="secondary">{fmtPercent(toNum(d.percentage))} من الفائض</Badge>}
                 </div>
-                <span style={{ display: "flex", gap: "0.1rem" }}>
-                  <button className="btn btn-ghost" type="button" onClick={() => setEditingId(d.id)} title="تعديل">✎</button>
-                  <form action={deleteAction} style={{ display: "inline" }}>
+                <span className="flex gap-0.5">
+                  <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setEditingId(d.id)} aria-label="تعديل">
+                    <Pencil className="size-4" />
+                  </Button>
+                  <form action={deleteAction}>
                     <input type="hidden" name="id" value={d.id} />
-                    <button className="btn btn-danger" type="submit" title="حذف">🗑</button>
+                    <Button type="submit" variant="ghost" size="icon" className="size-8 text-rose-600 hover:text-rose-600" aria-label="حذف">
+                      <Trash2 className="size-4" />
+                    </Button>
                   </form>
                 </span>
               </div>
-              <div className="muted" style={{ fontSize: "0.8rem", marginTop: "0.3rem" }}>
-                المُجمّع: <strong style={{ color: "var(--invest)" }}>{fmtEgp(actual)} EGP</strong>
+              <div className="mt-1 text-xs text-muted-foreground tabular-nums">
+                المُجمّع: <strong className="text-blue-600 dark:text-blue-400">{fmtEgp(actual)} EGP</strong>
                 {target !== null && <> من {fmtEgp(target)} EGP</>}
               </div>
               {ratio !== null && (
-                <div style={{ height: 8, background: "var(--border)", borderRadius: 999, marginTop: "0.4rem", overflow: "hidden" }}>
-                  <div style={{ width: `${ratio * 100}%`, height: "100%", background: "var(--invest)" }} />
+                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-border">
+                  <div className="h-full bg-blue-500" style={{ width: `${ratio * 100}%` }} />
                 </div>
               )}
             </div>
@@ -127,11 +131,11 @@ export default function InvestmentDestinationsEditor({
           await addAction(fd);
           addRef.current?.reset();
         }}
-        style={{ display: "grid", gridTemplateColumns: gridCols, gap: "0.4rem", alignItems: "center" }}
+        className={`${grid} items-center`}
       >
         <Fields />
-        <button className="btn btn-primary" type="submit">+ إضافة</button>
+        <Button type="submit">+ إضافة</Button>
       </form>
-    </section>
+    </Card>
   );
 }

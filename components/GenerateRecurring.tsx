@@ -1,7 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Box, Button, Checkbox, Dialog, Flex, Text, TextField } from "@radix-ui/themes";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 import { computeEgp, fmtEgp, toNum } from "@/lib/format";
 
 export type GItem = {
@@ -16,28 +30,40 @@ export type GItem = {
 };
 
 type Row = GItem & { selected: boolean };
-type RadixColor = "green" | "red";
+type Tone = "income" | "expense";
+
+const TONES = {
+  income: {
+    text: "text-emerald-600 dark:text-emerald-400",
+    trigger: "border-emerald-500/40 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-300",
+    submit: "bg-emerald-600 text-white hover:bg-emerald-600/90",
+  },
+  expense: {
+    text: "text-rose-600 dark:text-rose-400",
+    trigger: "border-rose-500/40 text-rose-700 hover:bg-rose-500/10 dark:text-rose-300",
+    submit: "bg-rose-600 text-white hover:bg-rose-600/90",
+  },
+};
 
 export default function GenerateRecurring({
   triggerLabel,
   title,
-  color,
+  tone,
   items,
   emptyText,
-  disabled,
   onConfirm,
 }: {
   triggerLabel: string;
   title: string;
-  color: RadixColor;
+  tone: Tone;
   items: GItem[];
   emptyText: string;
-  disabled?: boolean;
   onConfirm: (rows: GItem[]) => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
+  const t = TONES[tone];
 
   useEffect(() => {
     if (open) setRows(items.map((it) => ({ ...it, selected: true })));
@@ -47,31 +73,17 @@ export default function GenerateRecurring({
     setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   }
 
-  const selectedRows = rows.filter((r) => r.selected);
-  const allSelected = rows.length > 0 && selectedRows.length === rows.length;
-  const someSelected = selectedRows.length > 0 && !allSelected;
-  const total = selectedRows.reduce(
-    (a, r) => a + computeEgp(toNum(r.original), r.currency === "EGP" ? 1 : toNum(r.rate) || 0),
-    0
-  );
-
-  function toggleAll(v: boolean) {
-    setRows((rs) => rs.map((r) => ({ ...r, selected: v })));
-  }
+  const selected = rows.filter((r) => r.selected);
+  const allSelected = rows.length > 0 && selected.length === rows.length;
+  const total = selected.reduce((a, r) => a + computeEgp(toNum(r.original), r.currency === "EGP" ? 1 : toNum(r.rate) || 0), 0);
 
   async function confirm() {
     setSaving(true);
     try {
       await onConfirm(
-        selectedRows.map((r) => ({
-          key: r.key,
-          label: r.label,
-          currency: r.currency,
-          original: r.original,
-          rate: r.rate,
-          personId: r.personId,
-          categoryId: r.categoryId,
-          sourceId: r.sourceId,
+        selected.map((r) => ({
+          key: r.key, label: r.label, currency: r.currency, original: r.original,
+          rate: r.rate, personId: r.personId, categoryId: r.categoryId, sourceId: r.sourceId,
         }))
       );
       setOpen(false);
@@ -81,115 +93,72 @@ export default function GenerateRecurring({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
-      <Dialog.Trigger>
-        <Button type="button" variant="soft" color={color} disabled={disabled}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button type="button" variant="outline" className={cn("w-fit", t.trigger)}>
           ⟳ {triggerLabel}
         </Button>
-      </Dialog.Trigger>
-      <Dialog.Content maxWidth="560px">
-        <Dialog.Title size="4">{title}</Dialog.Title>
-        <Dialog.Description size="2" color="gray" mb="3">
-          اختار البنود اللي عايز تضيفها، وتقدر تعدّل المبالغ قبل الإضافة.
-        </Dialog.Description>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>اختار البنود اللي عايز تضيفها، وتقدر تعدّل المبالغ قبل الإضافة.</DialogDescription>
+        </DialogHeader>
 
         {rows.length === 0 ? (
-          <Text color="gray" size="2">{emptyText}</Text>
+          <p className="py-2 text-sm text-muted-foreground">{emptyText}</p>
         ) : (
-          <>
-            <Flex align="center" justify="between" mb="2">
-              <Text as="label" size="2" weight="bold">
-                <Flex align="center" gap="2">
-                  <Checkbox
-                    checked={allSelected ? true : someSelected ? "indeterminate" : false}
-                    onCheckedChange={(v) => toggleAll(v === true)}
-                  />
-                  تحديد الكل
-                </Flex>
-              </Text>
-              <Text size="2" color="gray">
-                الإجمالي:{" "}
-                <Text weight="bold" color={color} className="num">
-                  {fmtEgp(total)} EGP
-                </Text>
-              </Text>
-            </Flex>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <Label className="flex items-center gap-2 text-sm font-semibold">
+                <Checkbox
+                  checked={allSelected}
+                  onCheckedChange={(v) => setRows((rs) => rs.map((r) => ({ ...r, selected: v === true })))}
+                />
+                تحديد الكل
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                الإجمالي: <span className={cn("font-bold tabular-nums", t.text)}>{fmtEgp(total)} EGP</span>
+              </span>
+            </div>
 
-            <Flex direction="column" gap="2" style={{ maxHeight: "50vh", overflowY: "auto" }}>
+            <div className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto pe-1">
               {rows.map((r) => {
                 const rEgp = computeEgp(toNum(r.original), r.currency === "EGP" ? 1 : toNum(r.rate) || 0);
                 return (
-                  <Flex
+                  <div
                     key={r.key}
-                    align="center"
-                    gap="2"
-                    wrap="wrap"
-                    style={{
-                      background: r.selected ? "var(--gray-2)" : "transparent",
-                      border: "1px solid var(--gray-a4)",
-                      borderRadius: "var(--radius-3)",
-                      padding: "8px 10px",
-                      opacity: r.selected ? 1 : 0.55,
-                    }}
-                  >
-                    <Checkbox
-                      checked={r.selected}
-                      onCheckedChange={(v) => update(r.key, { selected: v === true })}
-                    />
-                    <Box style={{ flex: "2 1 140px" }}>
-                      <TextField.Root
-                        value={r.label}
-                        onChange={(e) => update(r.key, { label: e.target.value })}
-                        size="2"
-                      />
-                    </Box>
-                    <Box style={{ flex: "1 1 90px" }}>
-                      <TextField.Root
-                        type="text"
-                        inputMode="decimal"
-                        value={r.original}
-                        onChange={(e) => update(r.key, { original: e.target.value })}
-                        size="2"
-                      >
-                        <TextField.Slot side="right">{r.currency}</TextField.Slot>
-                      </TextField.Root>
-                    </Box>
-                    {r.currency !== "EGP" && (
-                      <Box style={{ flex: "1 1 70px" }}>
-                        <TextField.Root
-                          type="text"
-                          inputMode="decimal"
-                          placeholder="سعر"
-                          value={r.rate}
-                          onChange={(e) => update(r.key, { rate: e.target.value })}
-                          size="2"
-                        />
-                      </Box>
+                    className={cn(
+                      "flex flex-wrap items-center gap-2 rounded-md border p-2 transition",
+                      r.selected ? "bg-muted/50" : "opacity-55"
                     )}
-                    <Text size="2" weight="bold" className="num" style={{ minWidth: 86, textAlign: "left" }}>
-                      {fmtEgp(rEgp)} EGP
-                    </Text>
-                  </Flex>
+                  >
+                    <Checkbox checked={r.selected} onCheckedChange={(v) => update(r.key, { selected: v === true })} />
+                    <Input className="h-8 flex-[2] basis-32" value={r.label} onChange={(e) => update(r.key, { label: e.target.value })} />
+                    <div className="relative flex-1 basis-24">
+                      <Input className="h-8 pe-10" type="text" inputMode="decimal" value={r.original} onChange={(e) => update(r.key, { original: e.target.value })} />
+                      <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-xs text-muted-foreground">{r.currency}</span>
+                    </div>
+                    {r.currency !== "EGP" && (
+                      <Input className="h-8 flex-1 basis-16" type="text" inputMode="decimal" placeholder="سعر" value={r.rate} onChange={(e) => update(r.key, { rate: e.target.value })} />
+                    )}
+                    <span className="min-w-20 text-left text-sm font-bold tabular-nums">{fmtEgp(rEgp)} EGP</span>
+                  </div>
                 );
               })}
-            </Flex>
-          </>
+            </div>
+          </div>
         )}
 
-        <Flex justify="end" gap="2" mt="4">
-          <Dialog.Close>
-            <Button type="button" variant="soft" color="gray">إلغاء</Button>
-          </Dialog.Close>
-          <Button
-            type="button"
-            color={color}
-            disabled={saving || selectedRows.length === 0}
-            onClick={confirm}
-          >
-            اعتماد وإضافة ({selectedRows.length})
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="secondary">إلغاء</Button>
+          </DialogClose>
+          <Button type="button" className={cn(t.submit)} disabled={saving || selected.length === 0} onClick={confirm}>
+            اعتماد وإضافة ({selected.length})
           </Button>
-        </Flex>
-      </Dialog.Content>
-    </Dialog.Root>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

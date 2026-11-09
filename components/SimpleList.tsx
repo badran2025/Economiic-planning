@@ -1,6 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type Item = { id: number; name: string };
 type ServerAction = (fd: FormData) => Promise<void>;
@@ -24,14 +28,14 @@ export default function SimpleList({
   const addRef = useRef<HTMLFormElement>(null);
 
   return (
-    <section className="card" style={{ padding: "1.1rem 1.2rem" }}>
-      <h3 style={{ margin: "0 0 0.3rem", fontSize: "1.05rem" }}>{title}</h3>
-      {description && (
-        <p className="muted" style={{ margin: "0 0 0.8rem", fontSize: "0.8rem" }}>{description}</p>
-      )}
+    <Card className="gap-3 p-5">
+      <div>
+        <h3 className="text-base font-bold">{title}</h3>
+        {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
+      </div>
 
-      <ul style={{ listStyle: "none", padding: 0, margin: "0 0 0.9rem", display: "flex", flexDirection: "column", gap: "0.4rem" }}>
-        {items.length === 0 && <li className="muted" style={{ fontSize: "0.85rem" }}>لا يوجد بعد.</li>}
+      <ul className="flex flex-col gap-1.5">
+        {items.length === 0 && <li className="text-sm text-muted-foreground">لا يوجد بعد.</li>}
         {items.map((it) =>
           editingId === it.id ? (
             <li key={it.id}>
@@ -40,33 +44,26 @@ export default function SimpleList({
                   await updateAction(fd);
                   setEditingId(null);
                 }}
-                style={{ display: "flex", gap: "0.4rem" }}
+                className="flex gap-2"
               >
                 <input type="hidden" name="id" value={it.id} />
-                <input className="field" name="name" defaultValue={it.name} autoFocus />
-                <button className="btn btn-primary" type="submit">حفظ</button>
-                <button className="btn" type="button" onClick={() => setEditingId(null)}>إلغاء</button>
+                <Input name="name" defaultValue={it.name} autoFocus />
+                <Button type="submit" size="sm">حفظ</Button>
+                <Button type="button" size="sm" variant="secondary" onClick={() => setEditingId(null)}>إلغاء</Button>
               </form>
             </li>
           ) : (
-            <li
-              key={it.id}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: "0.5rem",
-                padding: "0.45rem 0.7rem",
-                background: "var(--surface-2)",
-                borderRadius: 8,
-              }}
-            >
+            <li key={it.id} className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-2">
               <span>{it.name}</span>
-              <span style={{ display: "flex", gap: "0.1rem" }}>
-                <button className="btn btn-ghost" type="button" onClick={() => setEditingId(it.id)} title="تعديل">✎</button>
-                <form action={deleteAction} style={{ display: "inline" }}>
+              <span className="flex gap-0.5">
+                <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setEditingId(it.id)} aria-label="تعديل">
+                  <Pencil className="size-4" />
+                </Button>
+                <form action={deleteAction}>
                   <input type="hidden" name="id" value={it.id} />
-                  <button className="btn btn-danger" type="submit" title="حذف">🗑</button>
+                  <Button type="submit" variant="ghost" size="icon" className="size-8 text-rose-600 hover:text-rose-600" aria-label="حذف">
+                    <Trash2 className="size-4" />
+                  </Button>
                 </form>
               </span>
             </li>
@@ -80,11 +77,11 @@ export default function SimpleList({
           await addAction(fd);
           addRef.current?.reset();
         }}
-        style={{ display: "flex", gap: "0.4rem" }}
+        className="flex gap-2"
       >
-        <input className="field" name="name" placeholder="إضافة جديد..." required />
-        <button className="btn btn-primary" type="submit">+ إضافة</button>
+        <Input name="name" placeholder="إضافة جديد..." required />
+        <Button type="submit">+ إضافة</Button>
       </form>
-    </section>
+    </Card>
   );
 }

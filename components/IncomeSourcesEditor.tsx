@@ -1,6 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { CURRENCIES } from "@/lib/constants";
 import { fmtEgp, fmtNumber, toNum } from "@/lib/format";
 
@@ -18,23 +23,14 @@ function Fields({ s }: { s?: Source }) {
   const isEgp = currency === "EGP";
   return (
     <>
-      <input className="field" name="name" placeholder="اسم المصدر" defaultValue={s?.name ?? ""} required />
-      <select className="field" name="currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
+      <Input name="name" placeholder="اسم المصدر" defaultValue={s?.name ?? ""} required />
+      <NativeSelect name="currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
         {CURRENCIES.map((c) => (
-          <option key={c.code} value={c.code}>{c.label}</option>
+          <NativeSelectOption key={c.code} value={c.code}>{c.label}</NativeSelectOption>
         ))}
-      </select>
-      <input className="field" type="text" inputMode="decimal" step="any" min="0" name="defaultAmount" placeholder="المبلغ" defaultValue={s ? String(s.defaultAmount) : ""} required />
-      <input
-        className="field"
-        type="text" inputMode="decimal"
-        step="any"
-        min="0"
-        name="defaultRate"
-        placeholder="سعر التحويل"
-        defaultValue={s ? String(s.defaultRate) : "1"}
-        style={{ display: isEgp ? "none" : "block" }}
-      />
+      </NativeSelect>
+      <Input type="text" inputMode="decimal" name="defaultAmount" placeholder="المبلغ" defaultValue={s ? String(s.defaultAmount) : ""} required />
+      <Input type="text" inputMode="decimal" name="defaultRate" placeholder="سعر التحويل" defaultValue={s ? String(s.defaultRate) : "1"} className={isEgp ? "hidden" : ""} />
     </>
   );
 }
@@ -52,17 +48,19 @@ export default function IncomeSourcesEditor({
 }) {
   const [editingId, setEditingId] = useState<number | null>(null);
   const addRef = useRef<HTMLFormElement>(null);
-  const gridCols = "repeat(auto-fit, minmax(130px, 1fr))";
+  const grid = "grid grid-cols-2 gap-2 sm:grid-cols-[1fr_auto_auto_auto_auto]";
 
   return (
-    <section className="card" style={{ padding: "1.1rem 1.2rem" }}>
-      <h3 style={{ margin: "0 0 0.3rem", fontSize: "1.05rem" }}>مصادر الدخل الثابتة</h3>
-      <p className="muted" style={{ margin: "0 0 0.8rem", fontSize: "0.8rem" }}>
-        دي بتتكرر كل شهر لما تضغط &quot;توليد الدخل الثابت&quot; داخل الشهر. المبلغ × سعر التحويل = الدخل بالجنيه.
-      </p>
+    <Card className="gap-3 p-5">
+      <div>
+        <h3 className="text-base font-bold">مصادر الدخل الثابتة</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          بتتكرر كل شهر لما تضغط «توليد الدخل الثابت». المبلغ × سعر التحويل = الدخل بالجنيه.
+        </p>
+      </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.9rem" }}>
-        {items.length === 0 && <span className="muted" style={{ fontSize: "0.85rem" }}>لا يوجد بعد.</span>}
+      <div className="flex flex-col gap-2">
+        {items.length === 0 && <span className="text-sm text-muted-foreground">لا يوجد بعد.</span>}
         {items.map((s) =>
           editingId === s.id ? (
             <form
@@ -71,32 +69,33 @@ export default function IncomeSourcesEditor({
                 await updateAction(fd);
                 setEditingId(null);
               }}
-              style={{ display: "grid", gridTemplateColumns: gridCols, gap: "0.4rem", alignItems: "center", background: "var(--surface-2)", padding: "0.6rem", borderRadius: 8 }}
+              className={`${grid} items-center rounded-md bg-muted/50 p-2`}
             >
               <input type="hidden" name="id" value={s.id} />
               <Fields s={s} />
-              <div style={{ display: "flex", gap: "0.3rem" }}>
-                <button className="btn btn-primary" type="submit">حفظ</button>
-                <button className="btn" type="button" onClick={() => setEditingId(null)}>إلغاء</button>
+              <div className="col-span-2 flex gap-2 sm:col-span-1">
+                <Button type="submit" size="sm">حفظ</Button>
+                <Button type="button" size="sm" variant="secondary" onClick={() => setEditingId(null)}>إلغاء</Button>
               </div>
             </form>
           ) : (
-            <div
-              key={s.id}
-              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "0.5rem", padding: "0.5rem 0.7rem", background: "var(--surface-2)", borderRadius: 8 }}
-            >
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <span style={{ fontWeight: 600 }}>{s.name}</span>
-                <span className="muted" style={{ fontSize: "0.8rem" }}>
+            <div key={s.id} className="flex items-center justify-between gap-2 rounded-md bg-muted/50 px-3 py-2">
+              <div className="flex flex-col">
+                <span className="font-semibold">{s.name}</span>
+                <span className="text-xs text-muted-foreground tabular-nums">
                   {fmtNumber(s.defaultAmount)} {s.currency}
                   {s.currency !== "EGP" ? ` × ${toNum(s.defaultRate)} = ${fmtEgp(toNum(s.defaultAmount) * toNum(s.defaultRate))} EGP` : ""}
                 </span>
               </div>
-              <span style={{ display: "flex", gap: "0.1rem" }}>
-                <button className="btn btn-ghost" type="button" onClick={() => setEditingId(s.id)} title="تعديل">✎</button>
-                <form action={deleteAction} style={{ display: "inline" }}>
+              <span className="flex gap-0.5">
+                <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setEditingId(s.id)} aria-label="تعديل">
+                  <Pencil className="size-4" />
+                </Button>
+                <form action={deleteAction}>
                   <input type="hidden" name="id" value={s.id} />
-                  <button className="btn btn-danger" type="submit" title="حذف">🗑</button>
+                  <Button type="submit" variant="ghost" size="icon" className="size-8 text-rose-600 hover:text-rose-600" aria-label="حذف">
+                    <Trash2 className="size-4" />
+                  </Button>
                 </form>
               </span>
             </div>
@@ -110,11 +109,11 @@ export default function IncomeSourcesEditor({
           await addAction(fd);
           addRef.current?.reset();
         }}
-        style={{ display: "grid", gridTemplateColumns: gridCols, gap: "0.4rem", alignItems: "center" }}
+        className={`${grid} items-center`}
       >
         <Fields />
-        <button className="btn btn-primary" type="submit">+ إضافة</button>
+        <Button type="submit">+ إضافة</Button>
       </form>
-    </section>
+    </Card>
   );
 }

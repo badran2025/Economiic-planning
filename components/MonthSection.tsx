@@ -1,12 +1,34 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Pencil, Trash2, Plus, X } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 import GenerateRecurring, { type GItem } from "@/components/GenerateRecurring";
+import { cn } from "@/lib/utils";
 import { CURRENCIES, currencySymbol } from "@/lib/constants";
 import { computeEgp, fmtEgp, fmtNumber, toNum } from "@/lib/format";
 
 type Opt = { id: number; name: string };
 type EntryType = "income" | "expense" | "investment";
+
+const TONE: Record<EntryType, { dot: string; text: string }> = {
+  income: { dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400" },
+  expense: { dot: "bg-rose-500", text: "text-rose-600 dark:text-rose-400" },
+  investment: { dot: "bg-blue-500", text: "text-blue-600 dark:text-blue-400" },
+};
 
 export type AnyEntry = {
   id: number;
@@ -26,20 +48,12 @@ export type AnyEntry = {
 };
 
 type ServerAction = (fd: FormData) => Promise<void>;
-
-type IncomeBatch = (p: {
-  year: number; month: number; occurredOn: string | null;
-  items: { sourceId: number | null; label: string; currency: string; originalAmount: number; rate: number }[];
-}) => Promise<void>;
-type ExpenseBatch = (p: {
-  year: number; month: number; occurredOn: string | null;
-  items: { label: string; personId: number | null; categoryId: number | null; amountEgp: number }[];
-}) => Promise<void>;
+type IncomeBatch = (p: { year: number; month: number; occurredOn: string | null; items: { sourceId: number | null; label: string; currency: string; originalAmount: number; rate: number }[] }) => Promise<void>;
+type ExpenseBatch = (p: { year: number; month: number; occurredOn: string | null; items: { label: string; personId: number | null; categoryId: number | null; amountEgp: number }[] }) => Promise<void>;
 
 type Props = {
   type: EntryType;
   title: string;
-  color: string;
   year: number;
   month: number;
   entries: AnyEntry[];
@@ -55,6 +69,15 @@ type Props = {
   commitExpense?: ExpenseBatch;
 };
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      {children}
+    </div>
+  );
+}
+
 function CurrencyInputs({
   defaultCurrency = "EGP",
   defaultOriginal = "",
@@ -68,64 +91,27 @@ function CurrencyInputs({
   const [original, setOriginal] = useState(String(defaultOriginal ?? ""));
   const [rate, setRate] = useState(String(defaultRate ?? ""));
   const isEgp = currency === "EGP";
-  const effRate = isEgp ? 1 : toNum(rate) || 0;
-  const egp = computeEgp(toNum(original), effRate);
-
+  const egp = computeEgp(toNum(original), isEgp ? 1 : toNum(rate) || 0);
   return (
     <>
-      <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-        <span className="muted" style={{ fontSize: "0.72rem" }}>المبلغ الأصلي</span>
-        <input
-          className="field"
-          type="text" inputMode="decimal"
-          name="originalAmount"
-          step="any"
-          min="0"
-          required
-          value={original}
-          onChange={(e) => setOriginal(e.target.value)}
-        />
-      </label>
-      <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-        <span className="muted" style={{ fontSize: "0.72rem" }}>العملة</span>
-        <select
-          className="field"
-          name="currency"
-          value={currency}
-          onChange={(e) => setCurrency(e.target.value)}
-        >
+      <Field label="المبلغ الأصلي">
+        <Input type="text" inputMode="decimal" name="originalAmount" required value={original} onChange={(e) => setOriginal(e.target.value)} />
+      </Field>
+      <Field label="العملة">
+        <NativeSelect name="currency" value={currency} onChange={(e) => setCurrency(e.target.value)}>
           {CURRENCIES.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.label}
-            </option>
+            <NativeSelectOption key={c.code} value={c.code}>{c.label}</NativeSelectOption>
           ))}
-        </select>
-      </label>
-      <label
-        style={{
-          display: isEgp ? "none" : "flex",
-          flexDirection: "column",
-          gap: "0.2rem",
-        }}
-      >
-        <span className="muted" style={{ fontSize: "0.72rem" }}>سعر التحويل للجنيه</span>
-        <input
-          className="field"
-          type="text" inputMode="decimal"
-          name="rate"
-          step="any"
-          min="0"
-          value={rate}
-          placeholder="مثال 13.6"
-          onChange={(e) => setRate(e.target.value)}
-        />
-      </label>
-      <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-        <span className="muted" style={{ fontSize: "0.72rem" }}>المقابل بالجنيه</span>
-        <div className="field" style={{ background: "transparent", fontWeight: 700 }} aria-live="polite">
-          {fmtEgp(egp)} EGP
-        </div>
-      </div>
+        </NativeSelect>
+      </Field>
+      {!isEgp && (
+        <Field label="سعر التحويل للجنيه">
+          <Input type="text" inputMode="decimal" name="rate" placeholder="13.6" value={rate} onChange={(e) => setRate(e.target.value)} />
+        </Field>
+      )}
+      <Field label="المقابل بالجنيه">
+        <div className="flex h-9 items-center text-sm font-bold tabular-nums">{fmtEgp(egp)} EGP</div>
+      </Field>
     </>
   );
 }
@@ -147,143 +133,103 @@ function ClassifierInputs({
     <>
       {type === "expense" && (
         <>
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-            <span className="muted" style={{ fontSize: "0.72rem" }}>مراكز التكلفة</span>
-            <select className="field" name="categoryId" defaultValue={entry?.categoryId ?? ""}>
-              <option value="">— بدون —</option>
+          <Field label="مراكز التكلفة">
+            <NativeSelect name="categoryId" defaultValue={entry?.categoryId ?? ""}>
+              <NativeSelectOption value="">— بدون —</NativeSelectOption>
               {(categories ?? []).map((o) => (
-                <option key={o.id} value={o.id}>{o.name}</option>
+                <NativeSelectOption key={o.id} value={o.id}>{o.name}</NativeSelectOption>
               ))}
-            </select>
-          </label>
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-            <span className="muted" style={{ fontSize: "0.72rem" }}>المستفيد</span>
-            <select className="field" name="personId" defaultValue={entry?.personId ?? ""}>
-              <option value="">— بدون —</option>
+            </NativeSelect>
+          </Field>
+          <Field label="المستفيد">
+            <NativeSelect name="personId" defaultValue={entry?.personId ?? ""}>
+              <NativeSelectOption value="">— بدون —</NativeSelectOption>
               {(people ?? []).map((o) => (
-                <option key={o.id} value={o.id}>{o.name}</option>
+                <NativeSelectOption key={o.id} value={o.id}>{o.name}</NativeSelectOption>
               ))}
-            </select>
-          </label>
+            </NativeSelect>
+          </Field>
         </>
       )}
       {type === "investment" && (
-        <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-          <span className="muted" style={{ fontSize: "0.72rem" }}>الوجهة</span>
-          <select className="field" name="destinationId" defaultValue={entry?.destinationId ?? ""}>
-            <option value="">— بدون —</option>
+        <Field label="الوجهة">
+          <NativeSelect name="destinationId" defaultValue={entry?.destinationId ?? ""}>
+            <NativeSelectOption value="">— بدون —</NativeSelectOption>
             {(destinations ?? []).map((o) => (
-              <option key={o.id} value={o.id}>{o.name}</option>
+              <NativeSelectOption key={o.id} value={o.id}>{o.name}</NativeSelectOption>
             ))}
-          </select>
-        </label>
+          </NativeSelect>
+        </Field>
       )}
-      <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-        <span className="muted" style={{ fontSize: "0.72rem" }}>
-          {type === "income" ? "اسم الدخل / المصدر" : "الوصف / البيان"}
-        </span>
-        <input
-          className="field"
-          type="text"
-          name="label"
-          defaultValue={entry?.label ?? ""}
-          placeholder={type === "income" ? "مثلاً: مكافأة" : "وصف مختصر (اختياري)"}
-        />
-      </label>
+      <Field label={type === "income" ? "اسم الدخل / المصدر" : "الوصف / البيان"}>
+        <Input type="text" name="label" defaultValue={entry?.label ?? ""} placeholder={type === "income" ? "مثلاً: مكافأة" : "وصف مختصر (اختياري)"} />
+      </Field>
     </>
   );
 }
 
-export default function MonthSection(props: Props) {
-  const {
-    type,
-    title,
-    color,
-    year,
-    month,
-    entries,
-    total,
-    people,
-    categories,
-    destinations,
-    addAction,
-    updateAction,
-    deleteAction,
-    genItems,
-    commitIncome,
-    commitExpense,
-  } = props;
+export default function MonthSection({
+  type,
+  title,
+  year,
+  month,
+  entries,
+  total,
+  people,
+  categories,
+  destinations,
+  addAction,
+  updateAction,
+  deleteAction,
+  genItems,
+  commitIncome,
+  commitExpense,
+}: Props) {
+  const [showAdd, setShowAdd] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const addFormRef = useRef<HTMLFormElement>(null);
+  const tone = TONE[type];
+
+  const classifierCols = type === "expense" ? 2 : type === "investment" ? 1 : 0;
+  const colCount = 5 + classifierCols + 1;
 
   async function confirmGenerate(rows: GItem[]) {
     if (type === "income" && commitIncome) {
       await commitIncome({
-        year,
-        month,
-        occurredOn: null,
-        items: rows.map((r) => ({
-          sourceId: r.sourceId,
-          label: r.label,
-          currency: r.currency,
-          originalAmount: toNum(r.original),
-          rate: toNum(r.rate) || 1,
-        })),
+        year, month, occurredOn: null,
+        items: rows.map((r) => ({ sourceId: r.sourceId, label: r.label, currency: r.currency, originalAmount: toNum(r.original), rate: toNum(r.rate) || 1 })),
       });
     } else if (type === "expense" && commitExpense) {
       await commitExpense({
-        year,
-        month,
-        occurredOn: null,
-        items: rows.map((r) => ({
-          label: r.label,
-          personId: r.personId,
-          categoryId: r.categoryId,
-          amountEgp: toNum(r.original),
-        })),
+        year, month, occurredOn: null,
+        items: rows.map((r) => ({ label: r.label, personId: r.personId, categoryId: r.categoryId, amountEgp: toNum(r.original) })),
       });
     }
   }
 
-  const [showAdd, setShowAdd] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const addFormRef = useRef<HTMLFormElement>(null);
-
-  const classifierCols = type === "expense" ? 2 : type === "investment" ? 1 : 0;
-
   return (
-    <section className="card" style={{ padding: "1.1rem 1.2rem" }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: "0.6rem",
-          marginBottom: "0.9rem",
-        }}
-      >
-        <h3 style={{ margin: 0, fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span style={{ width: 10, height: 10, borderRadius: 3, background: color, display: "inline-block" }} />
+    <Card className="gap-4 p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="flex items-center gap-2 text-base font-bold">
+          <span className={cn("size-2.5 rounded-full", tone.dot)} />
           {title}
-          <span style={{ fontWeight: 800, color }}>{fmtEgp(total)} EGP</span>
+          <span className={cn("font-extrabold tabular-nums", tone.text)}>{fmtEgp(total)} EGP</span>
         </h3>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
+        <div className="flex gap-2">
           {genItems && (type === "income" || type === "expense") && (
             <GenerateRecurring
               triggerLabel={type === "expense" ? "توليد المصروف الثابت" : "توليد الدخل الثابت"}
               title={type === "expense" ? "اختر بنود المصروف الثابت" : "اختر بنود الدخل الثابت"}
-              color={type === "expense" ? "red" : "green"}
+              tone={type === "expense" ? "expense" : "income"}
               items={genItems}
-              emptyText={
-                type === "expense"
-                  ? "مفيش بنود مصروفات مخطّطة محفوظة. ضيفها من الإعدادات."
-                  : "مفيش مصادر دخل ثابتة محفوظة. ضيفها من الإعدادات."
-              }
+              emptyText={type === "expense" ? "مفيش بنود مصروفات مخطّطة محفوظة. ضيفها من الإعدادات." : "مفيش مصادر دخل ثابتة محفوظة. ضيفها من الإعدادات."}
               onConfirm={confirmGenerate}
             />
           )}
-          <button className="btn btn-primary" type="button" onClick={() => setShowAdd((v) => !v)}>
-            {showAdd ? "× إغلاق" : "+ إضافة"}
-          </button>
+          <Button type="button" size="sm" variant={showAdd ? "secondary" : "default"} onClick={() => setShowAdd((v) => !v)}>
+            {showAdd ? <X className="size-4" /> : <Plus className="size-4" />}
+            {showAdd ? "إغلاق" : "إضافة"}
+          </Button>
         </div>
       </div>
 
@@ -293,134 +239,104 @@ export default function MonthSection(props: Props) {
           action={async (fd) => {
             await addAction(fd);
             addFormRef.current?.reset();
+            setShowAdd(false);
           }}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-            gap: "0.7rem",
-            padding: "0.9rem",
-            background: "var(--surface-2)",
-            border: "1px dashed var(--border)",
-            borderRadius: 12,
-            marginBottom: "1rem",
-          }}
+          className="grid grid-cols-1 gap-3 rounded-lg border border-dashed bg-muted/40 p-4 sm:grid-cols-2 lg:grid-cols-3"
         >
           <input type="hidden" name="year" value={year} />
           <input type="hidden" name="month" value={month} />
-          <p className="muted" style={{ gridColumn: "1 / -1", margin: 0, fontSize: "0.72rem" }}>
+          <p className="col-span-full m-0 text-xs text-muted-foreground">
             {type === "income"
-              ? "إضافة بند دخل جديد يدوي. للبنود الثابتة المحفوظة استخدم زر «توليد الدخل الثابت»."
+              ? "إضافة بند دخل جديد يدوي. للبنود الثابتة استخدم «توليد الدخل الثابت»."
               : type === "expense"
-              ? "إضافة بند مصروف جديد يدوي. للبنود الثابتة المحفوظة استخدم زر «توليد المصروف الثابت»."
+              ? "إضافة بند مصروف جديد يدوي. للبنود الثابتة استخدم «توليد المصروف الثابت»."
               : "إضافة بند استثمار جديد."}
           </p>
           <ClassifierInputs type={type} people={people} categories={categories} destinations={destinations} />
           <CurrencyInputs />
-          <div style={{ display: "flex", alignItems: "flex-end" }}>
-            <button className="btn btn-primary" type="submit" style={{ width: "100%" }}>
-              حفظ
-            </button>
+          <div className="flex items-end">
+            <Button type="submit" className="w-full">حفظ</Button>
           </div>
         </form>
       )}
 
       {entries.length === 0 ? (
-        <p className="muted" style={{ textAlign: "center", padding: "0.6rem" }}>
-          مفيش بنود في الشهر ده.
-        </p>
+        <p className="py-2 text-center text-sm text-muted-foreground">مفيش بنود في الشهر ده.</p>
       ) : (
-        <div className="table-wrap">
-          <table className="data">
-            <thead>
-              <tr>
-                {type === "expense" && <th>مراكز التكلفة</th>}
-                {type === "expense" && <th>المستفيد</th>}
-                {type === "investment" && <th>الوجهة</th>}
-                <th>الوصف</th>
-                <th>الأصلي</th>
-                <th>العملة</th>
-                <th>السعر</th>
-                <th>EGP</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="overflow-x-auto rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {type === "expense" && <TableHead className="text-right">مراكز التكلفة</TableHead>}
+                {type === "expense" && <TableHead className="text-right">المستفيد</TableHead>}
+                {type === "investment" && <TableHead className="text-right">الوجهة</TableHead>}
+                <TableHead className="text-right">الوصف</TableHead>
+                <TableHead className="text-right">الأصلي</TableHead>
+                <TableHead className="text-right">العملة</TableHead>
+                <TableHead className="text-right">السعر</TableHead>
+                <TableHead className="text-right">EGP</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {entries.map((e) => {
-                const colCount = 6 + classifierCols;
                 if (editingId === e.id) {
                   return (
-                    <tr key={e.id}>
-                      <td colSpan={colCount} style={{ padding: 0 }}>
+                    <TableRow key={e.id}>
+                      <TableCell colSpan={colCount} className="p-0">
                         <form
                           action={async (fd) => {
                             await updateAction(fd);
                             setEditingId(null);
                           }}
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-                            gap: "0.7rem",
-                            padding: "0.9rem",
-                            background: "var(--surface-2)",
-                          }}
+                          className="grid grid-cols-1 gap-3 bg-muted/40 p-4 sm:grid-cols-2 lg:grid-cols-3"
                         >
                           <input type="hidden" name="id" value={e.id} />
                           <input type="hidden" name="year" value={year} />
                           <input type="hidden" name="month" value={month} />
-                          <ClassifierInputs
-                            type={type}
-                            people={people}
-                            categories={categories}
-                            destinations={destinations}
-                            entry={e}
-                          />
-                          <CurrencyInputs
-                            
-                            defaultCurrency={e.currency}
-                            defaultOriginal={e.originalAmount}
-                            defaultRate={e.rate}
-                          />
-                          <div style={{ display: "flex", alignItems: "flex-end", gap: "0.5rem" }}>
-                            <button className="btn btn-primary" type="submit">حفظ</button>
-                            <button className="btn" type="button" onClick={() => setEditingId(null)}>
-                              إلغاء
-                            </button>
+                          <ClassifierInputs type={type} people={people} categories={categories} destinations={destinations} entry={e} />
+                          <CurrencyInputs defaultCurrency={e.currency} defaultOriginal={e.originalAmount} defaultRate={e.rate} />
+                          <div className="flex items-end gap-2">
+                            <Button type="submit">حفظ</Button>
+                            <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>إلغاء</Button>
                           </div>
                         </form>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 }
                 return (
-                  <tr key={e.id}>
-                    {type === "expense" && <td>{e.categoryName ?? "—"}</td>}
-                    {type === "expense" && <td>{e.personName ?? "—"}</td>}
-                    {type === "investment" && <td>{e.destinationName ?? "—"}</td>}
-                    <td>{e.label || "—"}</td>
-                    <td>{fmtNumber(e.originalAmount)}</td>
-                    <td><span className="chip">{currencySymbol(e.currency)}</span></td>
-                    <td className="muted">{e.currency === "EGP" ? "—" : fmtNumber(e.rate, 4)}</td>
-                    <td style={{ fontWeight: 700, color }}>{fmtEgp(e.amountEgp)}</td>
-                    <td>
-                      <div style={{ display: "flex", gap: "0.1rem" }}>
-                        <button className="btn btn-ghost" type="button" onClick={() => setEditingId(e.id)} title="تعديل">
-                          ✎
-                        </button>
-                        <form action={deleteAction} style={{ display: "inline" }}>
+                  <TableRow key={e.id}>
+                    {type === "expense" && <TableCell>{e.categoryName ?? "—"}</TableCell>}
+                    {type === "expense" && <TableCell>{e.personName ?? "—"}</TableCell>}
+                    {type === "investment" && <TableCell>{e.destinationName ?? "—"}</TableCell>}
+                    <TableCell>{e.label || "—"}</TableCell>
+                    <TableCell className="tabular-nums">{fmtNumber(e.originalAmount)}</TableCell>
+                    <TableCell><Badge variant="secondary">{currencySymbol(e.currency)}</Badge></TableCell>
+                    <TableCell className="tabular-nums text-muted-foreground">{e.currency === "EGP" ? "—" : fmtNumber(e.rate, 4)}</TableCell>
+                    <TableCell className={cn("font-bold tabular-nums", tone.text)}>{fmtEgp(e.amountEgp)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-0.5">
+                        <Button type="button" variant="ghost" size="icon" className="size-8" onClick={() => setEditingId(e.id)} aria-label="تعديل">
+                          <Pencil className="size-4" />
+                        </Button>
+                        <form action={deleteAction}>
                           <input type="hidden" name="id" value={e.id} />
                           <input type="hidden" name="year" value={year} />
                           <input type="hidden" name="month" value={month} />
-                          <button className="btn btn-danger" type="submit" title="حذف">🗑</button>
+                          <Button type="submit" variant="ghost" size="icon" className="size-8 text-rose-600 hover:text-rose-600" aria-label="حذف">
+                            <Trash2 className="size-4" />
+                          </Button>
                         </form>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
-    </section>
+    </Card>
   );
 }

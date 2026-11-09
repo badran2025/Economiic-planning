@@ -1,6 +1,6 @@
 "use client";
 
-import { Select, Flex } from "@radix-ui/themes";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { MONTH_NAMES } from "@/lib/constants";
 
 export function currentYM(): string {
@@ -30,30 +30,36 @@ export default function MonthYearPicker({
   const nowYear = new Date().getFullYear();
   const years: number[] = [];
   for (let yr = nowYear + 2; yr >= nowYear - 6; yr--) years.push(yr);
-
   const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
     <>
       {name && <input type="hidden" name={name} value={value} />}
-      <Flex gap="2">
-        <Select.Root value={String(m)} onValueChange={(v) => onChange(`${y}-${pad(Number(v))}`)}>
-          <Select.Trigger style={{ flex: "1 1 auto" }} aria-label="الشهر" />
-          <Select.Content>
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <NativeSelect
+            aria-label="الشهر"
+            value={String(m)}
+            onChange={(e) => onChange(`${y}-${pad(Number(e.target.value))}`)}
+          >
             {MONTH_NAMES.map((nm, i) => (
-              <Select.Item key={i} value={String(i + 1)}>{nm}</Select.Item>
+              <NativeSelectOption key={i} value={String(i + 1)}>{nm}</NativeSelectOption>
             ))}
-          </Select.Content>
-        </Select.Root>
-        <Select.Root value={String(y)} onValueChange={(v) => onChange(`${Number(v)}-${pad(m)}`)}>
-          <Select.Trigger style={{ width: 96 }} aria-label="السنة" />
-          <Select.Content>
+          </NativeSelect>
+        </div>
+        <div className="w-28">
+          <NativeSelect
+            aria-label="السنة"
+            className="num"
+            value={String(y)}
+            onChange={(e) => onChange(`${Number(e.target.value)}-${pad(m)}`)}
+          >
             {years.map((yr) => (
-              <Select.Item key={yr} value={String(yr)} className="num">{yr}</Select.Item>
+              <NativeSelectOption key={yr} value={String(yr)}>{yr}</NativeSelectOption>
             ))}
-          </Select.Content>
-        </Select.Root>
-      </Flex>
+          </NativeSelect>
+        </div>
+      </div>
     </>
   );
 }

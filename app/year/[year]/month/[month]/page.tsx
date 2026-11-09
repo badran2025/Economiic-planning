@@ -90,17 +90,17 @@ export default async function MonthPage({
   }));
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <div className="flex flex-col gap-6">
       <section>
-        <div style={{ marginBottom: "0.9rem", display: "flex", gap: "0.5rem", fontSize: "0.85rem" }}>
-          <Link href="/" className="muted" style={{ textDecoration: "none" }}>الرئيسية</Link>
-          <span className="muted">/</span>
-          <Link href={`/year/${year}`} className="muted" style={{ textDecoration: "none" }}>
+        <div className="mb-3 flex gap-1.5 text-sm text-muted-foreground">
+          <Link href="/" className="hover:text-foreground">الرئيسية</Link>
+          <span>/</span>
+          <Link href={`/year/${year}`} className="hover:text-foreground">
             سنة {year}
           </Link>
         </div>
-        <h1 style={{ margin: "0 0 1rem", fontSize: "1.6rem" }}>
-          {monthName(month)} {year}
+        <h1 className="mb-4 text-2xl font-bold tracking-tight">
+          {monthName(month)} <span className="tabular-nums">{year}</span>
         </h1>
         <HeroTotals totals={totals} />
       </section>
@@ -108,7 +108,6 @@ export default async function MonthPage({
       <MonthSection
         type="income"
         title="الدخل"
-        color="var(--income)"
         year={year}
         month={month}
         entries={income as unknown as AnyEntry[]}
@@ -123,7 +122,6 @@ export default async function MonthPage({
       <MonthSection
         type="expense"
         title="المصروفات"
-        color="var(--expense)"
         year={year}
         month={month}
         entries={expenses as unknown as AnyEntry[]}
@@ -140,7 +138,6 @@ export default async function MonthPage({
       <MonthSection
         type="investment"
         title="الاستثمار"
-        color="var(--invest)"
         year={year}
         month={month}
         entries={investments as unknown as AnyEntry[]}

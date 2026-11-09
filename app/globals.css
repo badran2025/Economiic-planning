@@ -1,211 +1,101 @@
-/* ===== ربط الخط ورموز التوافق بنظام Radix Themes ===== */
-.radix-themes {
-  --default-font-family: var(--font-cairo), system-ui, "Segoe UI", Tahoma, sans-serif;
-  --heading-font-family: var(--font-cairo), system-ui, sans-serif;
+@import "tailwindcss";
+@import "tw-animate-css";
 
-  /* متغيّرات توافقية مبنية على رموز Radix */
-  --surface: var(--color-panel-solid);
-  --surface-2: var(--gray-2);
-  --surface-3: var(--gray-3);
-  --border: var(--gray-a6);
-  --text: var(--gray-12);
-  --text-muted: var(--gray-10);
-  --brand: var(--accent-9);
-  --income: var(--green-11);
-  --expense: var(--red-11);
-  --invest: var(--blue-11);
-  --net: var(--amber-11);
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-cairo), ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
 }
 
-html,
-body {
-  padding: 0;
-  margin: 0;
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
 }
 
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.371 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    font-family: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* أرقام متساوية العرض */
 .num {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
 }
 
-.muted {
-  color: var(--gray-10);
-}
-
-/* ===== البطاقات ===== */
-.card {
-  background: var(--color-panel-solid);
-  border: 1px solid var(--gray-a5);
-  border-radius: var(--radius-4);
-  box-shadow: var(--shadow-2);
-}
-.card-link {
-  text-decoration: none;
-  color: inherit;
-  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-}
-.card-link:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-4);
-  border-color: var(--gray-a7);
-}
-
-/* ===== الحقول ===== */
-.field {
-  width: 100%;
-  height: 38px;
-  padding-inline: var(--space-3);
-  font-family: inherit;
-  font-size: var(--font-size-2);
-  color: var(--gray-12);
-  background: var(--color-surface);
-  border: 1px solid var(--gray-a7);
-  border-radius: var(--radius-3);
-  transition: outline-color 0.12s ease, border-color 0.12s ease;
-}
-.field::placeholder {
-  color: var(--gray-9);
-}
-.field:focus {
-  outline: 2px solid var(--accent-8);
-  outline-offset: -1px;
-  border-color: var(--accent-8);
-}
-select.field,
-.nselect {
-  -webkit-appearance: none;
-  appearance: none;
-  cursor: pointer;
-  padding-inline: var(--space-3) var(--space-6);
-  background-image: linear-gradient(45deg, transparent 50%, var(--gray-9) 50%),
-    linear-gradient(135deg, var(--gray-9) 50%, transparent 50%);
-  background-position: calc(var(--space-3) + 1px) center, calc(var(--space-3) + 6px) center;
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-}
-
-/* ===== الأزرار ===== */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-1);
-  height: 38px;
-  padding-inline: var(--space-4);
-  border-radius: var(--radius-3);
-  font-size: var(--font-size-2);
-  font-weight: 600;
-  font-family: inherit;
-  border: 1px solid var(--gray-a7);
-  background: var(--color-surface);
-  color: var(--gray-12);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
-}
-.btn:hover {
-  background: var(--gray-3);
-}
-.btn:focus-visible {
-  outline: 2px solid var(--accent-8);
-  outline-offset: 1px;
-}
-.btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-.btn-primary {
-  background: var(--accent-9);
-  color: var(--accent-contrast);
-  border-color: transparent;
-}
-.btn-primary:hover {
-  background: var(--accent-10);
-}
-.btn-ghost {
-  background: transparent;
-  border-color: transparent;
-  color: var(--gray-11);
-  height: 32px;
-  padding-inline: var(--space-2);
-}
-.btn-ghost:hover {
-  background: var(--gray-3);
-  color: var(--gray-12);
-}
-.btn-danger {
-  background: transparent;
-  border-color: transparent;
-  color: var(--red-11);
-  height: 32px;
-  padding-inline: var(--space-2);
-}
-.btn-danger:hover {
-  background: var(--red-3);
-}
-
-/* ===== الشرائح ===== */
-.chip {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: var(--font-size-1);
-  font-weight: 600;
-  background: var(--gray-3);
-  border: 1px solid var(--gray-a4);
-  color: var(--gray-11);
-}
-
-/* ===== الجداول ===== */
-.table-wrap {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border: 1px solid var(--gray-a5);
-  border-radius: var(--radius-3);
-}
-table.data {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: var(--font-size-2);
-  min-width: 640px;
-}
-table.data th,
-table.data td {
-  padding: var(--space-2) var(--space-3);
-  text-align: right;
-  border-bottom: 1px solid var(--gray-a4);
-  white-space: nowrap;
-}
-table.data thead th {
-  background: var(--gray-2);
-  color: var(--gray-10);
-  font-weight: 700;
-  font-size: var(--font-size-1);
-}
-table.data tbody tr:hover {
-  background: var(--gray-2);
-}
-table.data tr:last-child td {
-  border-bottom: none;
-}
-table.data td {
-  font-variant-numeric: tabular-nums;
-}
-
-/* ===== منتقي التقويم (react-day-picker) بأرقام إنجليزية ومتناسق مع Radix ===== */
+/* منتقي التقويم (غير مستخدم حالياً لكن متوافق) */
 .rdp-root {
-  --rdp-accent-color: var(--accent-9);
-  --rdp-accent-background-color: var(--accent-3);
-  --rdp-today-color: var(--accent-11);
-  --rdp-font-family: var(--font-cairo), system-ui, sans-serif;
-  margin: 0;
-}
-.rdp-root .rdp-day_button:hover {
-  background: var(--gray-3);
-}
-.rdp-selected .rdp-day_button {
-  background: var(--accent-9);
-  color: var(--accent-contrast);
-  border: none;
+  --rdp-accent-color: var(--primary);
 }

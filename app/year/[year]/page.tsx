@@ -2,7 +2,10 @@ import Link from "next/link";
 import { getMonthlyTotals, getYearTotals } from "@/lib/queries";
 import { HeroTotals, TotalsStrip } from "@/components/Totals";
 import { SetupNotice } from "@/components/SetupNotice";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { monthName } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -22,46 +25,34 @@ export default async function YearPage({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
+    <div className="flex flex-col gap-8">
       <section>
-        <div style={{ marginBottom: "0.9rem" }}>
-          <Link href="/" className="muted" style={{ fontSize: "0.85rem", textDecoration: "none" }}>
-            ← الرئيسية
-          </Link>
-          <h1 style={{ margin: "0.3rem 0 0", fontSize: "1.8rem" }}>سنة {year}</h1>
-        </div>
+        <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">← الرئيسية</Link>
+        <h1 className="mb-4 mt-1 text-2xl font-bold tracking-tight">
+          سنة <span className="tabular-nums">{year}</span>
+        </h1>
         <HeroTotals totals={yearTotals} />
       </section>
 
       <section>
-        <h2 style={{ margin: "0 0 0.9rem", fontSize: "1.2rem" }}>الشهور</h2>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))",
-            gap: "1rem",
-          }}
-        >
+        <h2 className="mb-3 text-xl font-bold tracking-tight">الشهور</h2>
+        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
           {months.map((m) => {
             const empty = m.income === 0 && m.expenses === 0 && m.investment === 0;
             return (
-              <Link
-                key={m.month}
-                href={`/year/${year}/month/${m.month}`}
-                className="card card-link"
-                style={{
-                  padding: "1rem 1.1rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.7rem",
-                  opacity: empty ? 0.72 : 1,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "1.1rem", fontWeight: 800 }}>{monthName(m.month)}</span>
-                  <span className="chip">{empty ? "فاضي" : "تفاصيل ←"}</span>
-                </div>
-                <TotalsStrip totals={m} />
+              <Link key={m.month} href={`/year/${year}/month/${m.month}`} className="block">
+                <Card
+                  className={cn(
+                    "gap-3 p-4 transition-all hover:border-foreground/20 hover:shadow-md",
+                    empty && "opacity-70"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-lg font-bold">{monthName(m.month)}</span>
+                    <Badge variant="secondary">{empty ? "فاضي" : "تفاصيل ←"}</Badge>
+                  </div>
+                  <TotalsStrip totals={m} />
+                </Card>
               </Link>
             );
           })}
