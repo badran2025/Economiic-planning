@@ -108,8 +108,8 @@ export default function InvestmentDestinationsEditor({
                 </span>
               </div>
               <div className="muted" style={{ fontSize: "0.8rem", marginTop: "0.3rem" }}>
-                المُجمّع: <strong style={{ color: "var(--invest)" }}>{fmtEgp(actual)} ج.م</strong>
-                {target !== null && <> من {fmtEgp(target)} ج.م</>}
+                المُجمّع: <strong style={{ color: "var(--invest)" }}>{fmtEgp(actual)} EGP</strong>
+                {target !== null && <> من {fmtEgp(target)} EGP</>}
               </div>
               {ratio !== null && (
                 <div style={{ height: 8, background: "var(--border)", borderRadius: 999, marginTop: "0.4rem", overflow: "hidden" }}>

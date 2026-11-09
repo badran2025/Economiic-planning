@@ -21,6 +21,7 @@ import {
   deleteExpenseEntry,
   deleteIncomeEntry,
   deleteInvestmentEntry,
+  generateRecurringExpenses,
   generateRecurringIncome,
   updateExpenseEntry,
   updateIncomeEntry,
@@ -102,6 +103,7 @@ export default async function MonthPage({
         addAction={addExpenseEntry}
         updateAction={updateExpenseEntry}
         deleteAction={deleteExpenseEntry}
+        generateAction={generateRecurringExpenses}
       />
 
       <MonthSection

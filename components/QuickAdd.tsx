@@ -13,6 +13,7 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
+import { Wallet, Receipt, TrendingUp } from "lucide-react";
 import { computeEgp, fmtEgp, toNum } from "@/lib/format";
 import { CURRENCIES } from "@/lib/constants";
 
@@ -27,10 +28,16 @@ function todayISO(): string {
   return local.toISOString().slice(0, 10);
 }
 
-const TYPES: { key: EntryType; label: string; color: RadixColor }[] = [
-  { key: "income", label: "دخل", color: "green" },
-  { key: "expense", label: "مصروف", color: "red" },
-  { key: "investment", label: "استثمار", color: "blue" },
+const TYPES: {
+  key: EntryType;
+  label: string;
+  color: RadixColor;
+  tint: string;
+  Icon: typeof Wallet;
+}[] = [
+  { key: "income", label: "دخل", color: "green", tint: "var(--green-9)", Icon: Wallet },
+  { key: "expense", label: "مصروف", color: "red", tint: "var(--red-9)", Icon: Receipt },
+  { key: "investment", label: "استثمار", color: "blue", tint: "var(--blue-9)", Icon: TrendingUp },
 ];
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -41,6 +48,24 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+function TypeIcon({ tint, Icon }: { tint: string; Icon: typeof Wallet }) {
+  return (
+    <Flex
+      align="center"
+      justify="center"
+      style={{
+        width: 22,
+        height: 22,
+        borderRadius: 7,
+        background: `color-mix(in srgb, ${tint} 16%, transparent)`,
+        color: tint,
+      }}
+    >
+      <Icon size={14} strokeWidth={2.2} />
+    </Flex>
+  );
+}
+
 export default function QuickAdd({
   people,
   categories,
@@ -48,6 +73,8 @@ export default function QuickAdd({
   addIncome,
   addExpense,
   addInvestment,
+  generateIncome,
+  generateExpense,
 }: {
   people: Opt[];
   categories: Opt[];
@@ -55,8 +82,11 @@ export default function QuickAdd({
   addIncome: ServerAction;
   addExpense: ServerAction;
   addInvestment: ServerAction;
+  generateIncome: ServerAction;
+  generateExpense: ServerAction;
 }) {
   const [type, setType] = useState<EntryType>("expense");
+  const [date, setDate] = useState(todayISO());
   const [currency, setCurrency] = useState("EGP");
   const [original, setOriginal] = useState("");
   const [rate, setRate] = useState("");
@@ -71,11 +101,16 @@ export default function QuickAdd({
   const egp = computeEgp(toNum(original), isEgp ? 1 : toNum(rate) || 0);
   const meta = TYPES.find((t) => t.key === type)!;
 
+  function ym(d: string) {
+    const base = d || todayISO();
+    return { year: base.slice(0, 4), month: String(parseInt(base.slice(5, 7), 10)), base };
+  }
+
   async function onSubmit(fd: FormData) {
-    const d = (fd.get("occurredOn") ?? "").toString() || todayISO();
-    fd.set("occurredOn", d);
-    fd.set("year", d.slice(0, 4));
-    fd.set("month", String(parseInt(d.slice(5, 7), 10)));
+    const { year, month, base } = ym(date);
+    fd.set("occurredOn", base);
+    fd.set("year", year);
+    fd.set("month", month);
     fd.set("currency", currency);
     fd.set("originalAmount", original);
     fd.set("rate", rate);
@@ -99,21 +134,44 @@ export default function QuickAdd({
       setPerson("none");
       setDestination("none");
       const names: Record<EntryType, string> = { income: "الدخل", expense: "المصروف", investment: "الاستثمار" };
-      setDone(`تم إضافة ${names[type]} ✓`);
-      setTimeout(() => setDone(null), 2500);
+      flash(`تم إضافة ${names[type]} ✓`);
     } finally {
       setSaving(false);
     }
   }
 
+  async function onGenerate() {
+    const { year, month } = ym(date);
+    const fd = new FormData();
+    fd.set("year", year);
+    fd.set("month", month);
+    setSaving(true);
+    try {
+      if (type === "income") {
+        await generateIncome(fd);
+        flash("تم توليد الدخل الثابت ✓");
+      } else {
+        await generateExpense(fd);
+        flash("تم توليد المصروف الثابت ✓");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function flash(msg: string) {
+    setDone(msg);
+    setTimeout(() => setDone(null), 2600);
+  }
+
   return (
     <Card size="3">
-      <form ref={formRef} action={onSubmit}>
+      <form ref={formRef} action={onSubmit} lang="en">
         <Flex direction="column" gap="4">
           <Flex align="center" justify="between" wrap="wrap" gap="2">
-            <Heading size="4">إضافة سريعة</Heading>
+            <Heading size="4" lang="ar">إضافة سريعة</Heading>
             {done && (
-              <Text size="2" weight="bold" color="green">
+              <Text size="2" weight="bold" color="green" lang="ar">
                 {done}
               </Text>
             )}
@@ -122,19 +180,35 @@ export default function QuickAdd({
           <SegmentedControl.Root
             value={type}
             onValueChange={(v) => setType(v as EntryType)}
-            size="2"
+            size="3"
           >
             {TYPES.map((t) => (
               <SegmentedControl.Item key={t.key} value={t.key}>
-                {t.label}
+                <Flex align="center" gap="2" lang="ar">
+                  <TypeIcon tint={t.tint} Icon={t.Icon} />
+                  {t.label}
+                </Flex>
               </SegmentedControl.Item>
             ))}
           </SegmentedControl.Root>
 
+          {type !== "investment" && (
+            <Box>
+              <Button type="button" variant="soft" color={meta.color} onClick={onGenerate} disabled={saving}>
+                ⟳ <span lang="ar">{type === "income" ? "توليد الدخل الثابت" : "توليد المصروف الثابت"}</span>
+              </Button>
+            </Box>
+          )}
+
           <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="3">
             <Box>
               <FieldLabel>التاريخ</FieldLabel>
-              <TextField.Root type="date" name="occurredOn" defaultValue={todayISO()} />
+              <TextField.Root
+                type="date"
+                lang="en"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
             </Box>
 
             {type === "expense" && (
@@ -190,6 +264,7 @@ export default function QuickAdd({
               <FieldLabel>المبلغ الأصلي</FieldLabel>
               <TextField.Root
                 type="number"
+                lang="en"
                 step="any"
                 min="0"
                 required
@@ -215,9 +290,10 @@ export default function QuickAdd({
                 <FieldLabel>سعر التحويل للجنيه</FieldLabel>
                 <TextField.Root
                   type="number"
+                  lang="en"
                   step="any"
                   min="0"
-                  placeholder="مثال 13.6"
+                  placeholder="13.6"
                   value={rate}
                   onChange={(e) => setRate(e.target.value)}
                 />
@@ -228,7 +304,7 @@ export default function QuickAdd({
               <FieldLabel>المقابل بالجنيه</FieldLabel>
               <Flex align="center" height="32px">
                 <Text weight="bold" color={meta.color} className="num">
-                  {fmtEgp(egp)} ج.م
+                  {fmtEgp(egp)} EGP
                 </Text>
               </Flex>
             </Box>
@@ -241,11 +317,11 @@ export default function QuickAdd({
 
           <Flex justify="end">
             <Button type="submit" color={meta.color} disabled={saving} size="3">
-              {saving ? "جارٍ الحفظ..." : `+ إضافة ${meta.label}`}
+              <span lang="ar">{saving ? "جارٍ الحفظ..." : `+ إضافة ${meta.label}`}</span>
             </Button>
           </Flex>
 
-          <Text size="1" color="gray">
+          <Text size="1" color="gray" lang="ar">
             السنة والشهر بيتحددوا تلقائياً من التاريخ، والرقم بيتجمّع في بطاقة الشهر والسنة والإجمالي.
           </Text>
         </Flex>

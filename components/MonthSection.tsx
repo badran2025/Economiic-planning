@@ -117,7 +117,7 @@ function CurrencyInputs({
       <div style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
         <span className="muted" style={{ fontSize: "0.72rem" }}>المقابل بالجنيه</span>
         <div className="field" style={{ background: "transparent", fontWeight: 700 }} aria-live="polite">
-          {fmtEgp(egp)} ج.م
+          {fmtEgp(egp)} EGP
         </div>
       </div>
     </>
@@ -221,15 +221,19 @@ export default function MonthSection(props: Props) {
         <h3 style={{ margin: 0, fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
           <span style={{ width: 10, height: 10, borderRadius: 3, background: color, display: "inline-block" }} />
           {title}
-          <span style={{ fontWeight: 800, color }}>{fmtEgp(total)} ج.م</span>
+          <span style={{ fontWeight: 800, color }}>{fmtEgp(total)} EGP</span>
         </h3>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           {generateAction && (
             <form action={generateAction}>
               <input type="hidden" name="year" value={year} />
               <input type="hidden" name="month" value={month} />
-              <button className="btn" type="submit" title="إنشاء بنود الدخل من المصادر الثابتة">
-                ⟳ توليد الدخل الثابت
+              <button
+                className="btn"
+                type="submit"
+                title={type === "expense" ? "إنشاء بنود المصروفات من الخطة الثابتة" : "إنشاء بنود الدخل من المصادر الثابتة"}
+              >
+                ⟳ {type === "expense" ? "توليد المصروف الثابت" : "توليد الدخل الثابت"}
               </button>
             </form>
           )}
@@ -294,7 +298,7 @@ export default function MonthSection(props: Props) {
                 <th>الأصلي</th>
                 <th>العملة</th>
                 <th>السعر</th>
-                <th>بالجنيه</th>
+                <th>EGP</th>
                 <th>ملاحظات</th>
                 <th></th>
               </tr>

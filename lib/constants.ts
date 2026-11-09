@@ -20,9 +20,9 @@ export function monthName(m: number): string {
 export type CurrencyCode = "EGP" | "SAR" | "USD";
 
 export const CURRENCIES: { code: CurrencyCode; label: string; symbol: string }[] = [
-  { code: "EGP", label: "جنيه مصري", symbol: "ج.م" },
-  { code: "SAR", label: "ريال سعودي", symbol: "ر.س" },
-  { code: "USD", label: "دولار أمريكي", symbol: "$" },
+  { code: "EGP", label: "EGP", symbol: "EGP" },
+  { code: "SAR", label: "SAR", symbol: "SAR" },
+  { code: "USD", label: "USD", symbol: "USD" },
 ];
 
 export function currencyLabel(code: string): string {

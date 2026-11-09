@@ -89,7 +89,7 @@ export default function IncomeSourcesEditor({
                 <span style={{ fontWeight: 600 }}>{s.name}</span>
                 <span className="muted" style={{ fontSize: "0.8rem" }}>
                   {fmtNumber(s.defaultAmount)} {s.currency}
-                  {s.currency !== "EGP" ? ` × ${toNum(s.defaultRate)} = ${fmtEgp(toNum(s.defaultAmount) * toNum(s.defaultRate))} ج.م` : ""}
+                  {s.currency !== "EGP" ? ` × ${toNum(s.defaultRate)} = ${fmtEgp(toNum(s.defaultAmount) * toNum(s.defaultRate))} EGP` : ""}
                 </span>
               </div>
               <span style={{ display: "flex", gap: "0.1rem" }}>

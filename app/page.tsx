@@ -15,6 +15,8 @@ import {
   addIncomeEntry,
   addInvestmentEntry,
   addYear,
+  generateRecurringExpenses,
+  generateRecurringIncome,
   loadDefaults,
 } from "./actions";
 
@@ -56,6 +58,8 @@ export default async function HomePage() {
         addIncome={addIncomeEntry}
         addExpense={addExpenseEntry}
         addInvestment={addInvestmentEntry}
+        generateIncome={generateRecurringIncome}
+        generateExpense={generateRecurringExpenses}
       />
 
       <Box>

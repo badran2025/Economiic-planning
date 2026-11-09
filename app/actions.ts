@@ -394,6 +394,39 @@ export async function generateRecurringIncome(fd: FormData) {
   revalidateMonth(year, month);
 }
 
+// ---------- توليد المصروف الثابت لشهر (من بنود المصروفات المخطّطة) ----------
+export async function generateRecurringExpenses(fd: FormData) {
+  const year = parseInt(str(fd, "year"), 10);
+  const month = parseInt(str(fd, "month"), 10);
+  if (!Number.isFinite(year) || !Number.isFinite(month)) return;
+  const db = getDb();
+  await ensureYear(year);
+  const planned = await db.select().from(s.plannedExpenses);
+  const existing = await db
+    .select({ label: s.expenseEntries.label })
+    .from(s.expenseEntries)
+    .where(and(eq(s.expenseEntries.year, year), eq(s.expenseEntries.month, month)));
+  const existingLabels = new Set(existing.map((e) => (e.label || "").trim()).filter(Boolean));
+  const toInsert = planned
+    .filter((p) => !existingLabels.has((p.label || "").trim()))
+    .map((p) => {
+      const amount = toNum(p.amountEgp);
+      return {
+        year,
+        month,
+        categoryId: p.categoryId,
+        personId: p.personId,
+        label: p.label,
+        currency: "EGP",
+        originalAmount: String(amount),
+        rate: "1",
+        amountEgp: String(amount),
+      };
+    });
+  if (toInsert.length) await db.insert(s.expenseEntries).values(toInsert);
+  revalidateMonth(year, month);
+}
+
 // ---------- تحميل التصنيفات الافتراضية ----------
 export async function loadDefaults() {
   const db = getDb();
