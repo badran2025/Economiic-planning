@@ -18,13 +18,13 @@ function Fields({ p, people, categories }: { p?: Planned; people: Opt[]; categor
     <>
       <input className="field" name="label" placeholder="اسم البند" defaultValue={p?.label ?? ""} required />
       <select className="field" name="categoryId" defaultValue={p?.categoryId ?? ""}>
-        <option value="">النوع — بدون</option>
+        <option value="">مركز التكلفة — بدون</option>
         {categories.map((c) => (
           <option key={c.id} value={c.id}>{c.name}</option>
         ))}
       </select>
       <select className="field" name="personId" defaultValue={p?.personId ?? ""}>
-        <option value="">الشخص — بدون</option>
+        <option value="">المستفيد — بدون</option>
         {people.map((o) => (
           <option key={o.id} value={o.id}>{o.name}</option>
         ))}

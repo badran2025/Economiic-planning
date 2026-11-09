@@ -1,19 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
-import DatePicker from "@/components/DatePicker";
 import GenerateRecurring, { type GItem } from "@/components/GenerateRecurring";
 import { CURRENCIES, currencySymbol } from "@/lib/constants";
 import { computeEgp, fmtEgp, fmtNumber, toNum } from "@/lib/format";
 
 type Opt = { id: number; name: string };
 type EntryType = "income" | "expense" | "investment";
-
-function todayISO(): string {
-  const d = new Date();
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
-}
 
 export type AnyEntry = {
   id: number;
@@ -155,7 +148,7 @@ function ClassifierInputs({
       {type === "expense" && (
         <>
           <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-            <span className="muted" style={{ fontSize: "0.72rem" }}>النوع</span>
+            <span className="muted" style={{ fontSize: "0.72rem" }}>مراكز التكلفة</span>
             <select className="field" name="categoryId" defaultValue={entry?.categoryId ?? ""}>
               <option value="">— بدون —</option>
               {(categories ?? []).map((o) => (
@@ -164,7 +157,7 @@ function ClassifierInputs({
             </select>
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-            <span className="muted" style={{ fontSize: "0.72rem" }}>الشخص</span>
+            <span className="muted" style={{ fontSize: "0.72rem" }}>المستفيد</span>
             <select className="field" name="personId" defaultValue={entry?.personId ?? ""}>
               <option value="">— بدون —</option>
               {(people ?? []).map((o) => (
@@ -321,10 +314,6 @@ export default function MonthSection(props: Props) {
               ? "إضافة بند مصروف جديد يدوي. للبنود الثابتة المحفوظة استخدم زر «توليد المصروف الثابت»."
               : "إضافة بند استثمار جديد."}
           </p>
-          <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-            <span className="muted" style={{ fontSize: "0.72rem" }}>التاريخ</span>
-            <DatePicker name="occurredOn" defaultValue={todayISO()} />
-          </label>
           <ClassifierInputs type={type} people={people} categories={categories} destinations={destinations} />
           <CurrencyInputs />
           <div style={{ display: "flex", alignItems: "flex-end" }}>
@@ -344,9 +333,8 @@ export default function MonthSection(props: Props) {
           <table className="data">
             <thead>
               <tr>
-                <th>التاريخ</th>
-                {type === "expense" && <th>النوع</th>}
-                {type === "expense" && <th>الشخص</th>}
+                {type === "expense" && <th>مراكز التكلفة</th>}
+                {type === "expense" && <th>المستفيد</th>}
                 {type === "investment" && <th>الوجهة</th>}
                 <th>الوصف</th>
                 <th>الأصلي</th>
@@ -358,7 +346,7 @@ export default function MonthSection(props: Props) {
             </thead>
             <tbody>
               {entries.map((e) => {
-                const colCount = 7 + classifierCols;
+                const colCount = 6 + classifierCols;
                 if (editingId === e.id) {
                   return (
                     <tr key={e.id}>
@@ -379,10 +367,6 @@ export default function MonthSection(props: Props) {
                           <input type="hidden" name="id" value={e.id} />
                           <input type="hidden" name="year" value={year} />
                           <input type="hidden" name="month" value={month} />
-                          <label style={{ display: "flex", flexDirection: "column", gap: "0.2rem" }}>
-                            <span className="muted" style={{ fontSize: "0.72rem" }}>التاريخ</span>
-                            <DatePicker name="occurredOn" defaultValue={e.occurredOn ?? todayISO()} />
-                          </label>
                           <ClassifierInputs
                             type={type}
                             people={people}
@@ -409,7 +393,6 @@ export default function MonthSection(props: Props) {
                 }
                 return (
                   <tr key={e.id}>
-                    <td className="muted">{e.occurredOn ?? "—"}</td>
                     {type === "expense" && <td>{e.categoryName ?? "—"}</td>}
                     {type === "expense" && <td>{e.personName ?? "—"}</td>}
                     {type === "investment" && <td>{e.destinationName ?? "—"}</td>}

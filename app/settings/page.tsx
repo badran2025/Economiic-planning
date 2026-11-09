@@ -101,7 +101,7 @@ export default async function SettingsPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "1.25rem" }}>
         <SimpleList
-          title="الأشخاص / المستفيدين"
+          title="المستفيدون"
           description="البيت، يارا، محمد، عبدالله... تُستخدم لتصنيف المصروفات."
           items={peopleOpts}
           addAction={addPerson}
@@ -109,7 +109,7 @@ export default async function SettingsPage() {
           deleteAction={deletePerson}
         />
         <SimpleList
-          title="أنواع المصروفات"
+          title="مراكز التكلفة"
           description="فواتير، دروس، كلية، علاج... (مراكز التكلفة)."
           items={categoryOpts}
           addAction={addCategory}

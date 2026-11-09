@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Box, Button, Card, Flex, Grid, Heading, Select, Separator, Text, TextField } from "@radix-ui/themes";
-import DatePicker from "@/components/DatePicker";
+import MonthYearPicker, { currentYM } from "@/components/MonthYearPicker";
 import GenerateRecurring, { type GItem } from "@/components/GenerateRecurring";
 import { computeEgp, fmtEgp, toNum } from "@/lib/format";
 import { CURRENCIES } from "@/lib/constants";
@@ -24,11 +24,6 @@ type ExpenseBatch = (p: {
   items: { label: string; personId: number | null; categoryId: number | null; amountEgp: number }[];
 }) => Promise<void>;
 
-function todayISO(): string {
-  const d = new Date();
-  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
-}
 
 const TYPES: { key: EntryType; label: string; color: RadixColor }[] = [
   { key: "income", label: "دخل", color: "green" },
@@ -64,7 +59,7 @@ export default function QuickAdd({
   commitExpense: ExpenseBatch;
 }) {
   const [type, setType] = useState<EntryType>("expense");
-  const [date, setDate] = useState(todayISO());
+  const [period, setPeriod] = useState(currentYM());
   const [currency, setCurrency] = useState("EGP");
   const [original, setOriginal] = useState("");
   const [rate, setRate] = useState("");
@@ -79,9 +74,9 @@ export default function QuickAdd({
   const egp = computeEgp(toNum(original), isEgp ? 1 : toNum(rate) || 0);
   const meta = TYPES.find((t) => t.key === type)!;
 
-  function ym(d: string) {
-    const base = d || todayISO();
-    return { year: parseInt(base.slice(0, 4), 10), month: parseInt(base.slice(5, 7), 10), base };
+  function ym(p: string) {
+    const base = (p || currentYM()) + "-01";
+    return { year: parseInt(p.slice(0, 4), 10), month: parseInt(p.slice(5, 7), 10), base };
   }
   function flash(msg: string) {
     setDone(msg);
@@ -89,7 +84,7 @@ export default function QuickAdd({
   }
 
   async function onSubmit(fd: FormData) {
-    const { year, month, base } = ym(date);
+    const { year, month, base } = ym(period);
     fd.set("occurredOn", base);
     fd.set("year", String(year));
     fd.set("month", String(month));
@@ -142,7 +137,7 @@ export default function QuickAdd({
   }));
 
   async function confirmIncome(rows: GItem[]) {
-    const { year, month, base } = ym(date);
+    const { year, month, base } = ym(period);
     await commitIncome({
       year,
       month,
@@ -158,7 +153,7 @@ export default function QuickAdd({
     flash("تم إضافة الدخل المختار ✓");
   }
   async function confirmExpense(rows: GItem[]) {
-    const { year, month, base } = ym(date);
+    const { year, month, base } = ym(period);
     await commitExpense({
       year,
       month,
@@ -240,14 +235,14 @@ export default function QuickAdd({
 
           <Grid columns={{ initial: "1", xs: "2", sm: "3" }} gap="3">
             <Box>
-              <FieldLabel>التاريخ</FieldLabel>
-              <DatePicker value={date} onChange={setDate} />
+              <FieldLabel>الشهر والسنة</FieldLabel>
+              <MonthYearPicker value={period} onChange={setPeriod} />
             </Box>
 
             {type === "expense" && (
               <>
                 <Box>
-                  <FieldLabel>النوع</FieldLabel>
+                  <FieldLabel>مراكز التكلفة</FieldLabel>
                   <Select.Root value={category} onValueChange={setCategory}>
                     <Select.Trigger style={{ width: "100%" }} />
                     <Select.Content>
@@ -259,7 +254,7 @@ export default function QuickAdd({
                   </Select.Root>
                 </Box>
                 <Box>
-                  <FieldLabel>الشخص</FieldLabel>
+                  <FieldLabel>المستفيد</FieldLabel>
                   <Select.Root value={person} onValueChange={setPerson}>
                     <Select.Trigger style={{ width: "100%" }} />
                     <Select.Content>
