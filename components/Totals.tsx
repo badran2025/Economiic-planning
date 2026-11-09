@@ -1,58 +1,63 @@
+import { Card, Flex, Grid, Heading, Text } from "@radix-ui/themes";
 import { fmtEgp } from "@/lib/format";
 import type { Totals } from "@/lib/queries";
 
-const META = {
-  income: { label: "الدخل", color: "var(--income)" },
-  expenses: { label: "المصروفات", color: "var(--expense)" },
-  investment: { label: "الاستثمار", color: "var(--invest)" },
-  net: { label: "المتبقّي", color: "var(--net)" },
-} as const;
+type RadixColor = "green" | "red" | "blue" | "amber";
 
-type Key = keyof typeof META;
-const ORDER: Key[] = ["income", "expenses", "investment", "net"];
+const META: Record<keyof Totals, { label: string; color: RadixColor }> = {
+  income: { label: "الدخل", color: "green" },
+  expenses: { label: "المصروفات", color: "red" },
+  investment: { label: "الاستثمار", color: "blue" },
+  net: { label: "المتبقّي", color: "amber" },
+};
+
+const ORDER: (keyof Totals)[] = ["income", "expenses", "investment", "net"];
 
 export function HeroTotals({ totals }: { totals: Totals }) {
   return (
-    <div
-      className="grid-auto"
-      style={{ gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))" }}
-    >
+    <Grid columns={{ initial: "2", sm: "4" }} gap="3">
       {ORDER.map((k) => (
-        <div
-          key={k}
-          className="card stat"
-          style={{ "--accent": META[k].color } as React.CSSProperties}
-        >
-          <div className="stat-label">
-            <span className="stat-dot" />
-            {META[k].label}
-          </div>
-          <div className="stat-value">{fmtEgp(totals[k])}</div>
-          <div className="stat-unit">جنيه مصري</div>
-        </div>
+        <Card key={k} size="2">
+          <Flex direction="column" gap="1">
+            <Flex align="center" gap="2">
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: `var(--${META[k].color}-9)`,
+                }}
+              />
+              <Text size="2" color="gray">
+                {META[k].label}
+              </Text>
+            </Flex>
+            <Heading size="7" color={META[k].color} className="num">
+              {fmtEgp(totals[k])}
+            </Heading>
+            <Text size="1" color="gray">
+              جنيه مصري
+            </Text>
+          </Flex>
+        </Card>
       ))}
-    </div>
+    </Grid>
   );
 }
 
 export function TotalsStrip({ totals }: { totals: Totals }) {
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(2, 1fr)",
-        gap: "0.45rem 0.9rem",
-        fontSize: "0.9rem",
-      }}
-    >
+    <Grid columns="2" gapX="4" gapY="1">
       {ORDER.map((k) => (
-        <div key={k} style={{ display: "flex", justifyContent: "space-between", gap: "0.4rem" }}>
-          <span className="muted">{META[k].label}</span>
-          <span className="num" style={{ fontWeight: 700, color: META[k].color }}>
+        <Flex key={k} justify="between" gap="2">
+          <Text size="2" color="gray">
+            {META[k].label}
+          </Text>
+          <Text size="2" weight="bold" color={META[k].color} className="num">
             {fmtEgp(totals[k])}
-          </span>
-        </div>
+          </Text>
+        </Flex>
       ))}
-    </div>
+    </Grid>
   );
 }

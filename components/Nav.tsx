@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Button, Flex } from "@radix-ui/themes";
 
 const LINKS = [
   { href: "/", label: "الرئيسية" },
@@ -11,15 +12,21 @@ const LINKS = [
 export default function Nav() {
   const pathname = usePathname();
   return (
-    <nav className="nav">
+    <Flex gap="2" align="center">
       {LINKS.map((l) => {
         const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
         return (
-          <Link key={l.href} href={l.href} className="nav-link" data-active={active}>
-            {l.label}
-          </Link>
+          <Button
+            key={l.href}
+            asChild
+            variant={active ? "soft" : "ghost"}
+            color={active ? "indigo" : "gray"}
+            size="2"
+          >
+            <Link href={l.href}>{l.label}</Link>
+          </Button>
         );
       })}
-    </nav>
+    </Flex>
   );
 }

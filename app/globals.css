@@ -1,416 +1,194 @@
-@import "tailwindcss";
+/* ===== ربط الخط ورموز التوافق بنظام Radix Themes ===== */
+.radix-themes {
+  --default-font-family: var(--font-cairo), system-ui, "Segoe UI", Tahoma, sans-serif;
+  --heading-font-family: var(--font-cairo), system-ui, sans-serif;
 
-/* ============ نظام التصميم ============ */
-:root {
-  /* الأسطح والنص — ألوان محايدة هادئة */
-  --bg: #f6f7f9;
-  --surface: #ffffff;
-  --surface-2: #f3f5f8;
-  --surface-3: #eceff4;
-  --border: #e4e7ec;
-  --border-strong: #d4d9e0;
-  --text: #101828;
-  --text-2: #475467;
-  --text-muted: #8a93a3;
-
-  /* لون واحد أساسي + ألوان دلالية محدودة */
-  --brand: #4f46e5;
-  --brand-weak: #eef0fe;
-  --income: #067a55;
-  --expense: #d83a52;
-  --invest: #2563eb;
-  --net: #b5560f;
-
-  /* نصف أقطار موحّدة */
-  --r-sm: 10px;
-  --r: 14px;
-  --r-lg: 18px;
-  --r-pill: 999px;
-
-  /* ظلال ناعمة */
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
-  --shadow-md: 0 4px 10px rgba(16, 24, 40, 0.06), 0 2px 6px rgba(16, 24, 40, 0.05);
-  --shadow-lg: 0 12px 28px rgba(16, 24, 40, 0.10);
-  --ring: color-mix(in srgb, var(--brand) 35%, transparent);
+  /* متغيّرات توافقية مبنية على رموز Radix */
+  --surface: var(--color-panel-solid);
+  --surface-2: var(--gray-2);
+  --surface-3: var(--gray-3);
+  --border: var(--gray-a6);
+  --text: var(--gray-12);
+  --text-muted: var(--gray-10);
+  --brand: var(--accent-9);
+  --income: var(--green-11);
+  --expense: var(--red-11);
+  --invest: var(--blue-11);
+  --net: var(--amber-11);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0a0e17;
-    --surface: #121825;
-    --surface-2: #0f1420;
-    --surface-3: #18202e;
-    --border: #212a38;
-    --border-strong: #2c3747;
-    --text: #e8edf6;
-    --text-2: #aeb9c9;
-    --text-muted: #7c8899;
-    --brand: #818cf8;
-    --brand-weak: #1b2140;
-    --income: #34d399;
-    --expense: #fb7185;
-    --invest: #60a5fa;
-    --net: #fbbf24;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.5);
-  }
-}
-
-* {
-  box-sizing: border-box;
-}
 html,
 body {
   padding: 0;
   margin: 0;
 }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-cairo), system-ui, "Segoe UI", Tahoma, sans-serif;
-  font-size: 15px;
-  line-height: 1.6;
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
 
-h1, h2, h3, h4 {
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  font-weight: 800;
-}
-
-a {
-  color: inherit;
-}
-
-::selection {
-  background: var(--brand-weak);
-}
-
-/* أرقام متساوية العرض لمحاذاة أفضل */
-.num,
-table.data td,
-.stat-value {
+.num {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
 }
 
 .muted {
-  color: var(--text-muted);
+  color: var(--gray-10);
 }
 
-/* ============ البطاقات ============ */
+/* ===== البطاقات ===== */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r);
-  box-shadow: var(--shadow-sm);
+  background: var(--color-panel-solid);
+  border: 1px solid var(--gray-a5);
+  border-radius: var(--radius-4);
+  box-shadow: var(--shadow-2);
 }
 .card-link {
   text-decoration: none;
-  color: var(--text);
+  color: inherit;
   transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
 }
 .card-link:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--border-strong);
+  box-shadow: var(--shadow-4);
+  border-color: var(--gray-a7);
 }
 
-/* ============ بطاقات الأرقام ============ */
-.stat {
-  position: relative;
-  padding: 1.1rem 1.2rem;
-  overflow: hidden;
+/* ===== الحقول ===== */
+.field {
+  width: 100%;
+  height: 38px;
+  padding-inline: var(--space-3);
+  font-family: inherit;
+  font-size: var(--font-size-2);
+  color: var(--gray-12);
+  background: var(--color-surface);
+  border: 1px solid var(--gray-a7);
+  border-radius: var(--radius-3);
+  transition: outline-color 0.12s ease, border-color 0.12s ease;
 }
-.stat::before {
-  content: "";
-  position: absolute;
-  inset-inline-start: 0;
-  inset-block: 0.9rem;
-  width: 3px;
-  border-radius: var(--r-pill);
-  background: var(--accent, var(--brand));
+.field::placeholder {
+  color: var(--gray-9);
 }
-.stat-label {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  font-size: 0.82rem;
-  color: var(--text-2);
-  margin-bottom: 0.4rem;
+.field:focus {
+  outline: 2px solid var(--accent-8);
+  outline-offset: -1px;
+  border-color: var(--accent-8);
 }
-.stat-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent, var(--brand));
-}
-.stat-value {
-  font-size: 1.75rem;
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -0.02em;
-  color: var(--text);
-}
-.stat-unit {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-top: 0.15rem;
+select.field,
+.nselect {
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  padding-inline: var(--space-3) var(--space-6);
+  background-image: linear-gradient(45deg, transparent 50%, var(--gray-9) 50%),
+    linear-gradient(135deg, var(--gray-9) 50%, transparent 50%);
+  background-position: calc(var(--space-3) + 1px) center, calc(var(--space-3) + 6px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
 }
 
-/* ============ الأزرار ============ */
+/* ===== الأزرار ===== */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  height: 40px;
-  padding: 0 0.95rem;
-  border-radius: var(--r-sm);
-  font-size: 0.9rem;
+  gap: var(--space-1);
+  height: 38px;
+  padding-inline: var(--space-4);
+  border-radius: var(--radius-3);
+  font-size: var(--font-size-2);
   font-weight: 600;
   font-family: inherit;
-  border: 1px solid var(--border-strong);
-  background: var(--surface);
-  color: var(--text);
+  border: 1px solid var(--gray-a7);
+  background: var(--color-surface);
+  color: var(--gray-12);
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease,
-    transform 0.05s ease, opacity 0.15s ease;
   white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
 }
 .btn:hover {
-  background: var(--surface-2);
-  border-color: var(--border-strong);
-}
-.btn:active {
-  transform: translateY(1px);
+  background: var(--gray-3);
 }
 .btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px var(--ring);
+  outline: 2px solid var(--accent-8);
+  outline-offset: 1px;
 }
 .btn:disabled {
   opacity: 0.6;
   cursor: default;
 }
 .btn-primary {
-  background: var(--brand);
-  color: #fff;
+  background: var(--accent-9);
+  color: var(--accent-contrast);
   border-color: transparent;
-  box-shadow: var(--shadow-sm);
 }
 .btn-primary:hover {
-  background: color-mix(in srgb, var(--brand) 90%, #000);
+  background: var(--accent-10);
 }
 .btn-ghost {
   background: transparent;
   border-color: transparent;
-  height: 34px;
-  padding: 0 0.6rem;
-  color: var(--text-2);
+  color: var(--gray-11);
+  height: 32px;
+  padding-inline: var(--space-2);
 }
 .btn-ghost:hover {
-  background: var(--surface-2);
-  color: var(--text);
+  background: var(--gray-3);
+  color: var(--gray-12);
 }
 .btn-danger {
   background: transparent;
   border-color: transparent;
-  color: var(--expense);
-  height: 34px;
-  padding: 0 0.55rem;
+  color: var(--red-11);
+  height: 32px;
+  padding-inline: var(--space-2);
 }
 .btn-danger:hover {
-  background: color-mix(in srgb, var(--expense) 12%, transparent);
+  background: var(--red-3);
 }
 
-/* ============ الحقول ============ */
-.field {
-  width: 100%;
-  height: 40px;
-  padding: 0 0.7rem;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  color: var(--text);
-  font-size: 0.9rem;
-  font-family: inherit;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-}
-select.field {
-  cursor: pointer;
-  appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
-    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
-  background-position: calc(0% + 14px) calc(50% + 1px), calc(0% + 19px) calc(50% + 1px);
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-  padding-inline-start: 2rem;
-}
-.field:hover {
-  border-color: var(--border-strong);
-}
-.field:focus {
-  outline: none;
-  border-color: var(--brand);
-  background: var(--surface);
-  box-shadow: 0 0 0 3px var(--ring);
-}
-label > span {
-  font-weight: 600;
-}
-
-/* ============ الشرائح (chips) ============ */
+/* ===== الشرائح ===== */
 .chip {
   display: inline-flex;
   align-items: center;
-  padding: 0.15rem 0.6rem;
-  border-radius: var(--r-pill);
-  font-size: 0.74rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--font-size-1);
   font-weight: 600;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  color: var(--text-2);
+  background: var(--gray-3);
+  border: 1px solid var(--gray-a4);
+  color: var(--gray-11);
 }
 
-/* ============ الجداول ============ */
+/* ===== الجداول ===== */
 .table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  border-radius: var(--r-sm);
-  border: 1px solid var(--border);
+  border: 1px solid var(--gray-a5);
+  border-radius: var(--radius-3);
 }
 table.data {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.88rem;
+  font-size: var(--font-size-2);
   min-width: 640px;
 }
 table.data th,
 table.data td {
-  padding: 0.65rem 0.8rem;
+  padding: var(--space-2) var(--space-3);
   text-align: right;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--gray-a4);
   white-space: nowrap;
 }
 table.data thead th {
-  position: sticky;
-  top: 0;
-  background: var(--surface-2);
-  color: var(--text-muted);
+  background: var(--gray-2);
+  color: var(--gray-10);
   font-weight: 700;
-  font-size: 0.74rem;
-  letter-spacing: 0.01em;
-}
-table.data tbody tr {
-  transition: background 0.12s ease;
+  font-size: var(--font-size-1);
 }
 table.data tbody tr:hover {
-  background: var(--surface-2);
+  background: var(--gray-2);
 }
 table.data tr:last-child td {
   border-bottom: none;
 }
-
-/* ============ الهيدر والتنقل ============ */
-.site-header {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
-  backdrop-filter: saturate(1.4) blur(10px);
-  border-bottom: 1px solid var(--border);
-}
-.site-header-inner {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 0.7rem 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  text-decoration: none;
-  color: var(--text);
-  font-weight: 800;
-  font-size: 1.05rem;
-  letter-spacing: -0.01em;
-}
-.brand-badge {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--r-sm);
-  background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 60%, #22d3ee));
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-size: 1.05rem;
-  box-shadow: var(--shadow-sm);
-}
-.nav {
-  display: flex;
-  gap: 0.25rem;
-}
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-  height: 36px;
-  padding: 0 0.8rem;
-  border-radius: var(--r-sm);
-  text-decoration: none;
-  color: var(--text-2);
-  font-weight: 600;
-  font-size: 0.9rem;
-  transition: background 0.15s ease, color 0.15s ease;
-}
-.nav-link:hover {
-  background: var(--surface-2);
-  color: var(--text);
-}
-.nav-link[data-active="true"] {
-  background: var(--brand-weak);
-  color: var(--brand);
-}
-
-/* تخطيط الصفحة */
-.page {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 1.4rem 1rem 4rem;
-}
-.page-title {
-  font-size: 1.55rem;
-  margin: 0;
-}
-.subtitle {
-  color: var(--text-muted);
-  margin: 0.25rem 0 0;
-  font-size: 0.92rem;
-}
-.breadcrumb {
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  margin-bottom: 0.7rem;
-}
-.breadcrumb a {
-  text-decoration: none;
-  color: var(--text-muted);
-}
-.breadcrumb a:hover {
-  color: var(--text);
-}
-
-.grid-auto {
-  display: grid;
-  gap: 1rem;
+table.data td {
+  font-variant-numeric: tabular-nums;
 }

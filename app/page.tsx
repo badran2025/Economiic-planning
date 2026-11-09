@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Box, Button, Card, Flex, Grid, Heading, Text, TextField } from "@radix-ui/themes";
 import {
   getCategories,
   getGrandTotals,
@@ -36,18 +37,17 @@ export default async function HomePage() {
   const peopleOpts = people.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name }));
   const categoryOpts = categories.filter((c) => c.active).map((c) => ({ id: c.id, name: c.name }));
   const destOpts = destinations.filter((d) => d.active).map((d) => ({ id: d.id, name: d.name }));
-
   const nextYear = new Date().getFullYear();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
-      <section>
-        <h1 style={{ margin: "0 0 0.3rem", fontSize: "1.5rem" }}>الملخّص الإجمالي</h1>
-        <p className="muted" style={{ margin: "0 0 1rem" }}>
+    <Flex direction="column" gap="6">
+      <Box>
+        <Heading size="6" mb="1">الملخّص الإجمالي</Heading>
+        <Text color="gray" size="2" mb="4" as="p">
           كل الأرقام بالجنيه المصري، ومجمّعة تلقائياً من كل الشهور والسنين.
-        </p>
+        </Text>
         <HeroTotals totals={totals} />
-      </section>
+      </Box>
 
       <QuickAdd
         people={peopleOpts}
@@ -58,77 +58,57 @@ export default async function HomePage() {
         addInvestment={addInvestmentEntry}
       />
 
-      <section>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "0.75rem",
-            marginBottom: "0.9rem",
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>السنوات</h2>
-          <form action={addYear} style={{ display: "flex", gap: "0.5rem" }}>
-            <input
-              className="field"
-              type="number"
-              name="year"
-              defaultValue={nextYear}
-              min={2000}
-              max={2100}
-              style={{ width: 120 }}
-              aria-label="السنة"
-            />
-            <button className="btn btn-primary" type="submit">
-              + إضافة سنة
-            </button>
+      <Box>
+        <Flex align="center" justify="between" wrap="wrap" gap="3" mb="3">
+          <Heading size="5">السنوات</Heading>
+          <form action={addYear}>
+            <Flex gap="2">
+              <TextField.Root
+                type="number"
+                name="year"
+                defaultValue={nextYear}
+                min={2000}
+                max={2100}
+                style={{ width: 120 }}
+                aria-label="السنة"
+              />
+              <Button type="submit">+ إضافة سنة</Button>
+            </Flex>
           </form>
-        </div>
+        </Flex>
 
         {years.length === 0 ? (
-          <div className="card" style={{ padding: "1.5rem", textAlign: "center" }}>
-            <p style={{ marginTop: 0 }}>مفيش سنين لسه. أضف سنة من فوق عشان تبدأ.</p>
-            <form action={loadDefaults}>
-              <button className="btn" type="submit">
-                تحميل التصنيفات الافتراضية (أشخاص/أنواع/مصادر دخل/وجهات استثمار)
-              </button>
-            </form>
-            <p className="muted" style={{ fontSize: "0.8rem", marginBottom: 0 }}>
-              اختياري — تقدر تعدّلها أو تحذفها بعدين من الإعدادات.
-            </p>
-          </div>
+          <Card size="3">
+            <Flex direction="column" align="center" gap="3" py="4">
+              <Text color="gray">مفيش سنين لسه. أضف سنة من فوق عشان تبدأ.</Text>
+              <form action={loadDefaults}>
+                <Button type="submit" variant="soft">
+                  تحميل التصنيفات الافتراضية
+                </Button>
+              </form>
+              <Text size="1" color="gray">
+                اختياري — تقدر تعدّلها أو تحذفها بعدين من الإعدادات.
+              </Text>
+            </Flex>
+          </Card>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))",
-              gap: "1rem",
-            }}
-          >
+          <Grid columns={{ initial: "1", xs: "2", md: "3" }} gap="3">
             {years.map((y) => (
-              <Link
-                key={y.year}
-                href={`/year/${y.year}`}
-                className="card card-link"
-                style={{
-                  padding: "1.1rem 1.2rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "0.8rem",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: "1.6rem", fontWeight: 800 }}>{y.year}</span>
-                  <span className="chip">عرض الشهور ←</span>
-                </div>
-                <TotalsStrip totals={y} />
-              </Link>
+              <Card key={y.year} size="2" asChild>
+                <Link href={`/year/${y.year}`}>
+                  <Flex direction="column" gap="3">
+                    <Flex align="baseline" justify="between">
+                      <Heading size="6">{y.year}</Heading>
+                      <Text size="1" color="gray">عرض الشهور ←</Text>
+                    </Flex>
+                    <TotalsStrip totals={y} />
+                  </Flex>
+                </Link>
+              </Card>
             ))}
-          </div>
+          </Grid>
         )}
-      </section>
-    </div>
+      </Box>
+    </Flex>
   );
 }
