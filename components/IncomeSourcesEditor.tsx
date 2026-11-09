@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { CURRENCIES } from "@/lib/constants";
-import { fmtEgp, toNum } from "@/lib/format";
+import { fmtEgp, fmtNumber, toNum } from "@/lib/format";
 
 type Source = {
   id: number;
@@ -88,7 +88,7 @@ export default function IncomeSourcesEditor({
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <span style={{ fontWeight: 600 }}>{s.name}</span>
                 <span className="muted" style={{ fontSize: "0.8rem" }}>
-                  {toNum(s.defaultAmount).toLocaleString("ar-EG")} {s.currency}
+                  {fmtNumber(s.defaultAmount)} {s.currency}
                   {s.currency !== "EGP" ? ` × ${toNum(s.defaultRate)} = ${fmtEgp(toNum(s.defaultAmount) * toNum(s.defaultRate))} ج.م` : ""}
                 </span>
               </div>
