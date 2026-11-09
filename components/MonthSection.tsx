@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import DatePicker from "@/components/DatePicker";
+import GenerateRecurring, { type GItem } from "@/components/GenerateRecurring";
 import { CURRENCIES, currencySymbol } from "@/lib/constants";
 import { computeEgp, fmtEgp, fmtNumber, toNum } from "@/lib/format";
 
@@ -33,6 +34,15 @@ export type AnyEntry = {
 
 type ServerAction = (fd: FormData) => Promise<void>;
 
+type IncomeBatch = (p: {
+  year: number; month: number; occurredOn: string | null;
+  items: { sourceId: number | null; label: string; currency: string; originalAmount: number; rate: number }[];
+}) => Promise<void>;
+type ExpenseBatch = (p: {
+  year: number; month: number; occurredOn: string | null;
+  items: { label: string; personId: number | null; categoryId: number | null; amountEgp: number }[];
+}) => Promise<void>;
+
 type Props = {
   type: EntryType;
   title: string;
@@ -47,7 +57,9 @@ type Props = {
   addAction: ServerAction;
   updateAction: ServerAction;
   deleteAction: ServerAction;
-  generateAction?: ServerAction;
+  genItems?: GItem[];
+  commitIncome?: IncomeBatch;
+  commitExpense?: ExpenseBatch;
 };
 
 function CurrencyInputs({
@@ -198,8 +210,39 @@ export default function MonthSection(props: Props) {
     addAction,
     updateAction,
     deleteAction,
-    generateAction,
+    genItems,
+    commitIncome,
+    commitExpense,
   } = props;
+
+  async function confirmGenerate(rows: GItem[]) {
+    if (type === "income" && commitIncome) {
+      await commitIncome({
+        year,
+        month,
+        occurredOn: null,
+        items: rows.map((r) => ({
+          sourceId: r.sourceId,
+          label: r.label,
+          currency: r.currency,
+          originalAmount: toNum(r.original),
+          rate: toNum(r.rate) || 1,
+        })),
+      });
+    } else if (type === "expense" && commitExpense) {
+      await commitExpense({
+        year,
+        month,
+        occurredOn: null,
+        items: rows.map((r) => ({
+          label: r.label,
+          personId: r.personId,
+          categoryId: r.categoryId,
+          amountEgp: toNum(r.original),
+        })),
+      });
+    }
+  }
 
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -225,18 +268,19 @@ export default function MonthSection(props: Props) {
           <span style={{ fontWeight: 800, color }}>{fmtEgp(total)} EGP</span>
         </h3>
         <div style={{ display: "flex", gap: "0.5rem" }}>
-          {generateAction && (
-            <form action={generateAction}>
-              <input type="hidden" name="year" value={year} />
-              <input type="hidden" name="month" value={month} />
-              <button
-                className="btn"
-                type="submit"
-                title={type === "expense" ? "إنشاء بنود المصروفات من الخطة الثابتة" : "إنشاء بنود الدخل من المصادر الثابتة"}
-              >
-                ⟳ {type === "expense" ? "توليد المصروف الثابت" : "توليد الدخل الثابت"}
-              </button>
-            </form>
+          {genItems && (type === "income" || type === "expense") && (
+            <GenerateRecurring
+              triggerLabel={type === "expense" ? "توليد المصروف الثابت" : "توليد الدخل الثابت"}
+              title={type === "expense" ? "اختر بنود المصروف الثابت" : "اختر بنود الدخل الثابت"}
+              color={type === "expense" ? "red" : "green"}
+              items={genItems}
+              emptyText={
+                type === "expense"
+                  ? "مفيش بنود مصروفات مخطّطة محفوظة. ضيفها من الإعدادات."
+                  : "مفيش مصادر دخل ثابتة محفوظة. ضيفها من الإعدادات."
+              }
+              onConfirm={confirmGenerate}
+            />
           )}
           <button className="btn btn-primary" type="button" onClick={() => setShowAdd((v) => !v)}>
             {showAdd ? "× إغلاق" : "+ إضافة"}

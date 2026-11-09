@@ -1,28 +1,32 @@
 import Link from "next/link";
 import {
   getCategories,
+  getIncomeSources,
   getInvestmentDestinations,
   getMonthExpenses,
   getMonthIncome,
   getMonthInvestments,
   getMonthTotals,
   getPeople,
+  getPlannedExpenses,
   getPlanSummary,
 } from "@/lib/queries";
 import { HeroTotals } from "@/components/Totals";
 import { SetupNotice } from "@/components/SetupNotice";
 import MonthSection, { type AnyEntry } from "@/components/MonthSection";
+import { type GItem } from "@/components/GenerateRecurring";
 import { PlanComparison } from "@/components/PlanComparison";
 import { monthName } from "@/lib/constants";
+import { toNum } from "@/lib/format";
 import {
   addExpenseEntry,
   addIncomeEntry,
   addInvestmentEntry,
+  commitExpenseBatch,
+  commitIncomeBatch,
   deleteExpenseEntry,
   deleteIncomeEntry,
   deleteInvestmentEntry,
-  generateRecurringExpenses,
-  generateRecurringIncome,
   updateExpenseEntry,
   updateIncomeEntry,
   updateInvestmentEntry,
@@ -39,9 +43,9 @@ export default async function MonthPage({
   const year = parseInt(yearStr, 10);
   const month = parseInt(monthStr, 10);
 
-  let totals, income, expenses, investments, people, categories, destinations, plan;
+  let totals, income, expenses, investments, people, categories, destinations, plan, sources, planned;
   try {
-    [totals, income, expenses, investments, people, categories, destinations, plan] =
+    [totals, income, expenses, investments, people, categories, destinations, plan, sources, planned] =
       await Promise.all([
         getMonthTotals(year, month),
         getMonthIncome(year, month),
@@ -51,6 +55,8 @@ export default async function MonthPage({
         getCategories(),
         getInvestmentDestinations(),
         getPlanSummary(),
+        getIncomeSources(),
+        getPlannedExpenses(),
       ]);
   } catch (e) {
     return <SetupNotice detail={e instanceof Error ? e.message : String(e)} />;
@@ -59,6 +65,29 @@ export default async function MonthPage({
   const peopleOpts = people.filter((p) => p.active).map((p) => ({ id: p.id, name: p.name }));
   const categoryOpts = categories.filter((c) => c.active).map((c) => ({ id: c.id, name: c.name }));
   const destOpts = destinations.filter((d) => d.active).map((d) => ({ id: d.id, name: d.name }));
+
+  const incomeItems: GItem[] = sources
+    .filter((s) => s.active)
+    .map((s) => ({
+      key: "i" + s.id,
+      label: s.name,
+      currency: s.currency,
+      original: String(toNum(s.defaultAmount)),
+      rate: String(toNum(s.defaultRate) || 1),
+      personId: null,
+      categoryId: null,
+      sourceId: s.id,
+    }));
+  const expenseItems: GItem[] = planned.map((p) => ({
+    key: "e" + p.id,
+    label: p.label,
+    currency: "EGP",
+    original: String(toNum(p.amountEgp)),
+    rate: "1",
+    personId: p.personId,
+    categoryId: p.categoryId,
+    sourceId: null,
+  }));
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
@@ -87,7 +116,8 @@ export default async function MonthPage({
         addAction={addIncomeEntry}
         updateAction={updateIncomeEntry}
         deleteAction={deleteIncomeEntry}
-        generateAction={generateRecurringIncome}
+        genItems={incomeItems}
+        commitIncome={commitIncomeBatch}
       />
 
       <MonthSection
@@ -103,7 +133,8 @@ export default async function MonthPage({
         addAction={addExpenseEntry}
         updateAction={updateExpenseEntry}
         deleteAction={deleteExpenseEntry}
-        generateAction={generateRecurringExpenses}
+        genItems={expenseItems}
+        commitExpense={commitExpenseBatch}
       />
 
       <MonthSection
